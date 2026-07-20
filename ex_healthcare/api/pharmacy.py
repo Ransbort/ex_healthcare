@@ -27,7 +27,7 @@ def get_pos_medications():
 			med.strength_uom AS strength_uom,
 			med.medication_class AS medication_class,
 			med.abbr AS abbr,
-			med.default_dosage_form AS dosage_form,
+			med.dosage_form AS dosage_form,
 			mli.item AS item_code,
 			mli.uom AS stock_uom,
 			item.image AS image,

@@ -29,7 +29,7 @@ def get_pos_medications():
 			med.abbr AS abbr,
 			med.dosage_form AS dosage_form,
 			mli.item AS item_code,
-			mli.uom AS stock_uom,
+			mli.stock_uom AS stock_uom,
 			item.image AS image,
 			item.standard_rate AS standard_rate,
 			ip.price_list_rate AS price_list_rate,

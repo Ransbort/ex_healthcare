@@ -1004,7 +1004,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                 
                 // Fetch invoice items
                 frappe.call({
-                    method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.get_invoice_items',
+                    method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_invoice_items',
                     args: {
                         invoice_name: invoiceName,
                         doctype: doctype
@@ -1073,7 +1073,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     // Helper function to load patient data
     function loadPatientData(patient_id, page) {
         frappe.call({
-            method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.get_patient_data',
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_patient_data',
             args: {
                 patient_id: patient_id
             },
@@ -1117,7 +1117,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     // Helper function to load customer data
     function loadCustomerData(customer_id, page) {
         frappe.call({
-            method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.get_customer_data',
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_customer_data',
             args: {
                 customer_id: customer_id
             },
@@ -1590,7 +1590,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     function showPaymentDialog(doc, type, page) {
         // Get available payment methods
         frappe.call({
-            method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.get_payment_methods',
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_payment_methods',
             callback: function(r) {
                 const payment_methods = r.message || [];
                 
@@ -1730,7 +1730,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     // Process invoice payment (regular sales invoice)
     function processInvoicePayment(invoice_name, values, page) {
         frappe.call({
-            method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.create_payment_entry',
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.create_payment_entry',
             args: {
                 invoice_name: invoice_name,
                 mode_of_payment: values.mode_of_payment,
@@ -1783,7 +1783,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     // Process department payment (pharmacy - create invoice from order + payment + delivery note)
     function processDepartmentPayment(order_name, values, type, page) {
         frappe.call({
-            method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.create_invoice_and_payment_from_order',
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.create_invoice_and_payment_from_order',
             args: {
                 order_name: order_name,
                 mode_of_payment: values.mode_of_payment,
@@ -1842,7 +1842,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     // Print payment receipt
     function printPaymentReceipt(payment_name) {
         frappe.call({
-            method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.get_print_content',
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_print_content',
             args: {
                 doctype: 'Payment Entry',
                 docname: payment_name
@@ -1967,7 +1967,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
 
         function loadTransactions(cashier, date, dialog) {
             frappe.call({
-                method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.get_daily_transactions',
+                method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_daily_transactions',
                 args: {
                     cashier: cashier,
                     transaction_date: date
@@ -2103,7 +2103,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
 
         function printDailyTransactions(transactions, cashier, date) {
             frappe.call({
-                method: 'healthcare.healthcare.page.cashier_portal.cashier_portal.get_daily_transactions_print',
+                method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_daily_transactions_print',
                 args: {
                     cashier: cashier,
                     transaction_date: date,

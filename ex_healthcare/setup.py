@@ -1,7 +1,7 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-from ex_healthcare.ex_healthcare.setup.workspace_installer import (
+from ex_healthcare.ex_healthcare.workspace_installer import (
 	workspace_installer,
 	workspace_remover,
 )

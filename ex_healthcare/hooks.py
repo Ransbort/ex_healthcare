@@ -96,6 +96,18 @@ before_uninstall = "ex_healthcare.ex_healthcare.setup.uninstall"
 
 # after_uninstall = "ex_healthcare.uninstall.after_uninstall"
 
+# Migration
+# ------------
+
+# Re-installs the workspace(s) defined under
+# apps/ex_healthcare/ex_healthcare/ex_healthcare/workspace/*.json on every
+# `bench migrate`. Without this, editing a workspace JSON (adding/removing
+# shortcuts or links) never takes effect until someone manually calls
+# workspace_installer() from the bench console.
+after_migrate = [
+	"ex_healthcare.ex_healthcare.workspace_installer.workspace_installer"
+]
+
 # Integration Setup
 # ------------------
 # To set up dependencies/integrations with other apps

@@ -1,0 +1,201 @@
+[
+  {
+    "doctype": "Workspace",
+    "name": "Retail Suite",
+    "title": "Retail Suite",
+    "label": "Retail Suite",
+    "module": "Retail",
+    "icon": "shopping-cart",
+    "indicator_color": "green",
+    "public": 1,
+    "is_hidden": 0,
+    "hide_custom": 0,
+    "sequence_id": 0.0,
+    "roles": [],
+    "charts": [],
+    "number_cards": [],
+    "custom_blocks": [],
+    "quick_lists": [],
+    "shortcuts": [
+      {
+        "label": "Start POS",
+        "type": "URL",
+        "url": "/pos",
+        "color": "Green"
+      },
+      {
+        "label": "POS Profile",
+        "type": "DocType",
+        "link_to": "POS Profile",
+        "doc_view": "List",
+        "color": "Grey"
+      },
+      {
+        "label": "POS Opening Shift",
+        "type": "DocType",
+        "link_to": "POS Opening Shift",
+        "doc_view": "List",
+        "color": "Grey"
+      },
+      {
+        "label": "POS Closing Shift",
+        "type": "DocType",
+        "link_to": "POS Closing Shift",
+        "doc_view": "List",
+        "color": "Grey"
+      },
+      {
+        "label": "POS Offer",
+        "type": "DocType",
+        "link_to": "POS Offer",
+        "doc_view": "List",
+        "color": "Grey"
+      },
+      {
+        "label": "POS Coupon",
+        "type": "DocType",
+        "link_to": "POS Coupon",
+        "doc_view": "List",
+        "color": "Grey"
+      },
+      {
+        "label": "POS Settings",
+        "type": "DocType",
+        "link_to": "POS Settings",
+        "doc_view": "List",
+        "color": "Grey"
+      },
+      {
+        "label": "Item",
+        "type": "DocType",
+        "link_to": "Item",
+        "doc_view": "List",
+        "color": "Grey"
+      }
+    ],
+    "content": "[{\"id\":\"header1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_pos\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Start POS\",\"col\":3}},{\"id\":\"sc_profile\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Profile\",\"col\":3}},{\"id\":\"sc_open\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Opening Shift\",\"col\":3}},{\"id\":\"sc_close\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Closing Shift\",\"col\":3}},{\"id\":\"sc_offer\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Offer\",\"col\":3}},{\"id\":\"sc_coupon\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Coupon\",\"col\":3}},{\"id\":\"sc_settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Settings\",\"col\":3}},{\"id\":\"sc_item\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item\",\"col\":3}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>POS Management</b></span>\",\"col\":12}},{\"id\":\"card_pos\",\"type\":\"card\",\"data\":{\"card_name\":\"POS\",\"col\":4}},{\"id\":\"card_shift\",\"type\":\"card\",\"data\":{\"card_name\":\"Shift Management\",\"col\":4}},{\"id\":\"card_offers\",\"type\":\"card\",\"data\":{\"card_name\":\"Offers & Coupons\",\"col\":4}},{\"id\":\"card_config\",\"type\":\"card\",\"data\":{\"card_name\":\"Configuration\",\"col\":4}},{\"id\":\"card_items\",\"type\":\"card\",\"data\":{\"card_name\":\"Items\",\"col\":4}}]",
+    "links": [
+      {
+        "type": "Card Break",
+        "label": "POS",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "POS Invoice",
+        "link_to": "POS Invoice",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "POS Invoice Merge Log",
+        "link_to": "POS Invoice Merge Log",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Shift Management",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "POS Opening Shift",
+        "link_to": "POS Opening Shift",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "POS Closing Shift",
+        "link_to": "POS Closing Shift",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Offers & Coupons",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "POS Offer",
+        "link_to": "POS Offer",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "POS Coupon",
+        "link_to": "POS Coupon",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Configuration",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "POS Settings",
+        "link_to": "POS Settings",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "POS Profile",
+        "link_to": "POS Profile",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Items",
+        "link_count": 1,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Item",
+        "link_to": "Item",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      }
+    ]
+  }
+]

@@ -14,7 +14,7 @@ Each item in the list will be shown as an app in the apps page
 add_to_apps_screen = [
  	{
  		"name": "ex_healthcare",
-		"logo": "/assets/ex_healthcare/logo.png",
+		"logo": "/assets/ex_healthcare/images/ex_healthcare.png",
 		"title": "Ex Healthcare",
  		"route": "/desk/ex_healthcare",
  		"has_permission": "ex_healthcare.api.permission.has_app_permission"

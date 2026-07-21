@@ -10,16 +10,16 @@ app_license = "mit"
 
 # required_apps = []
 
-# Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "ex_healthcare",
-# 		"logo": "/assets/ex_healthcare/logo.png",
-# 		"title": "Ex Healthcare",
-# 		"route": "/ex_healthcare",
-# 		"has_permission": "ex_healthcare.api.permission.has_app_permission"
-# 	}
-# ]
+Each item in the list will be shown as an app in the apps page
+add_to_apps_screen = [
+ 	{
+ 		"name": "ex_healthcare",
+		"logo": "/assets/ex_healthcare/logo.png",
+		"title": "Ex Healthcare",
+ 		"route": "/desk/ex_healthcare",
+ 		"has_permission": "ex_healthcare.api.permission.has_app_permission"
+ 	}
+ ]
 
 # Includes in <head>
 # ------------------
@@ -85,13 +85,15 @@ app_license = "mit"
 # Installation
 # ------------
 
+after_install = "ex_healthcare.setup.workspace_installer.workspace_installer"
+
 # before_install = "ex_healthcare.install.before_install"
-# after_install = "ex_healthcare.install.after_install"
 
 # Uninstallation
 # ------------
 
-# before_uninstall = "ex_healthcare.uninstall.before_uninstall"
+before_uninstall = "ex_healthcare.setup.workspace_installer.workspace_remover"
+
 # after_uninstall = "ex_healthcare.uninstall.after_uninstall"
 
 # Integration Setup
@@ -255,4 +257,3 @@ app_license = "mit"
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-

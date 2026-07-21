@@ -8,18 +8,18 @@ app_license = "mit"
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["erpnext", "healthcare"]
 
 # Each item in the list will be shown as an app in the apps page
 add_to_apps_screen = [
- 	{
- 		"name": "ex_healthcare",
+	{
+		"name": "ex_healthcare",
 		"logo": "/assets/ex_healthcare/images/ex_healthcare.png",
 		"title": "Ex Healthcare",
- 		"route": "/desk/ex_healthcare",
- 		"has_permission": "ex_healthcare.api.permission.has_app_permission"
- 	}
- ]
+		"route": "/app/ex-healthcare",
+		"has_permission": "ex_healthcare.ex_healthcare.api.permission.has_app_permission"
+	}
+]
 
 # Includes in <head>
 # ------------------
@@ -85,14 +85,14 @@ add_to_apps_screen = [
 # Installation
 # ------------
 
-after_install = "ex_healthcare.setup.workspace_installer.workspace_installer"
+after_install = "ex_healthcare.ex_healthcare.setup.setup"
 
 # before_install = "ex_healthcare.install.before_install"
 
 # Uninstallation
 # ------------
 
-before_uninstall = "ex_healthcare.setup.workspace_installer.workspace_remover"
+before_uninstall = "ex_healthcare.ex_healthcare.setup.uninstall"
 
 # after_uninstall = "ex_healthcare.uninstall.after_uninstall"
 

@@ -591,9 +591,9 @@ class PharmacyPOS {
 					}
 
 					.item-card-img {
-						width: 100px;
-						height: 100px;
-						object-fit: cover;
+						width: 100%;
+						height: 100%;
+						object-fit: contain;
 					}
 
 					.item-card-img-fallback {

@@ -1,42 +1,91 @@
 {
  "actions": [],
- "creation": "2026-07-17 00:00:00.000000",
+ "creation": "2026-07-20 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "pharmacy_section",
   "allow_oversell_medication",
-  "column_break_1",
-  "default_pharmacy_price_list"
+  "healthcare_settings_section",
+  "link_customer_to_patient",
+  "lab_test_approval_required",
+  "create_lab_test_on_si_submit",
+  "column_break_hc01",
+  "op_consulting_charge_item",
+  "inpatient_visit_charge_item",
+  "clinical_procedure_consumable_item",
+  "healthcare_settings_link_html"
  ],
  "fields": [
   {
-   "fieldname": "pharmacy_section",
-   "fieldtype": "Section Break",
-   "label": "Pharmacy POS"
-  },
-  {
    "default": "0",
-   "description": "If enabled, the Pharmacy POS allows selling more units than a Medication Request's prescribed/remaining quantity, and more than current on-hand stock (existing out-of-stock blocks still apply on the frontend).",
    "fieldname": "allow_oversell_medication",
    "fieldtype": "Check",
-   "label": "Allow Oversell of Medication"
+   "label": "Allow Oversell Medication"
   },
   {
-   "fieldname": "column_break_1",
+   "fieldname": "healthcare_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Healthcare Settings (Marley Healthcare)"
+  },
+  {
+   "description": "Mirrored from Healthcare Settings -- read-only here, edit at the source.",
+   "fieldname": "link_customer_to_patient",
+   "fieldtype": "Check",
+   "label": "Link Customer to Patient",
+   "read_only": 1
+  },
+  {
+   "description": "Mirrored from Healthcare Settings -- read-only here, edit at the source.",
+   "fieldname": "lab_test_approval_required",
+   "fieldtype": "Check",
+   "label": "Lab Test Approval Required",
+   "read_only": 1
+  },
+  {
+   "description": "Mirrored from Healthcare Settings -- read-only here, edit at the source.",
+   "fieldname": "create_lab_test_on_si_submit",
+   "fieldtype": "Check",
+   "label": "Create Lab Test(s) on Sales Invoice Submission",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_hc01",
    "fieldtype": "Column Break"
   },
   {
-   "description": "Used as a fallback price list when a Medication has none configured.",
-   "fieldname": "default_pharmacy_price_list",
+   "description": "Mirrored from Healthcare Settings -- read-only here, edit at the source.",
+   "fieldname": "op_consulting_charge_item",
    "fieldtype": "Link",
-   "label": "Default Pharmacy Price List",
-   "options": "Price List"
+   "label": "Out Patient Consulting Charge Item",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "description": "Mirrored from Healthcare Settings -- read-only here, edit at the source.",
+   "fieldname": "inpatient_visit_charge_item",
+   "fieldtype": "Link",
+   "label": "Inpatient Visit Charge Item",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "description": "Mirrored from Healthcare Settings -- read-only here, edit at the source.",
+   "fieldname": "clinical_procedure_consumable_item",
+   "fieldtype": "Link",
+   "label": "Clinical Procedure Consumable Item",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "healthcare_settings_link_html",
+   "fieldtype": "HTML",
+   "label": "Edit at Source"
   }
  ],
+ "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-07-17 00:00:00.000000",
+ "modified": "2026-07-21 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Ex Healthcare",
  "name": "Ex Healthcare Settings",
@@ -44,6 +93,7 @@
  "permissions": [
   {
    "create": 1,
+   "delete": 1,
    "email": 1,
    "print": 1,
    "read": 1,
@@ -54,6 +104,5 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+ "states": []
 }

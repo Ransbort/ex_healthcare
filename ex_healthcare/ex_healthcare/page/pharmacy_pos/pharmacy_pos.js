@@ -2549,6 +2549,7 @@ class PharmacyPOS {
 				transaction_date: frappe.datetime.get_today(),
 				delivery_date: frappe.datetime.get_today(),
 				custom_invoice_from: 'Pharmacy',
+				custom_department: 'Pharmacy',   // <-- add this: cashier_portal.py filters on this field
 				items: items
 			};
 

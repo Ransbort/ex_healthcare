@@ -8,7 +8,8 @@ app_license = "mit"
 # Apps
 # ------------------
 
-required_apps = ["erpnext", "healthcare"]
+required_apps = ["frappe/erpnext", "healthcare"]
+app_home = "/desk/healthcare"
 
 # Each item in the list will be shown as an app in the apps page
 add_to_apps_screen = [
@@ -16,7 +17,7 @@ add_to_apps_screen = [
 		"name": "ex_healthcare",
 		"logo": "/assets/ex_healthcare/images/ex_healthcare.svg",
 		"title": "Ex Healthcare",
-		"route": "/app/ex-healthcare",
+		"route": app_home,
 		"has_permission": "ex_healthcare.api.permission.has_app_permission"
 	}
 ]

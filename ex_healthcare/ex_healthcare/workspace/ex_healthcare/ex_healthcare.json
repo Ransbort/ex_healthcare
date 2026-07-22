@@ -1,0 +1,152 @@
+[
+  {
+    "doctype": "Workspace",
+    "name": "Ex Healthcare",
+    "title": "Ex Healthcare",
+    "label": "Ex Healthcare",
+    "module": "Ex Healthcare",
+    "icon": "heart",
+    "indicator_color": "green",
+    "public": 1,
+    "is_hidden": 0,
+    "hide_custom": 0,
+    "sequence_id": 0.0,
+    "roles": [],
+    "charts": [],
+    "number_cards": [],
+    "custom_blocks": [],
+    "quick_lists": [],
+    "shortcuts": [
+      {
+        "label": "Pharmacy POS",
+        "type": "Page",
+        "link_to": "pharmacy-pos",
+        "color": "Green"
+      },
+      {
+        "label": "Lab Portal",
+        "type": "Page",
+        "link_to": "lab-portal",
+        "color": "Blue"
+      },
+      {
+        "label": "Rehab Portal",
+        "type": "Page",
+        "link_to": "rehab-portal",
+        "color": "Orange"
+      },
+      {
+        "label": "Patient",
+        "type": "DocType",
+        "link_to": "Patient",
+        "doc_view": "List",
+        "color": "Grey"
+      },
+      {
+        "label": "Patient Encounter",
+        "type": "DocType",
+        "link_to": "Patient Encounter",
+        "doc_view": "List",
+        "color": "Grey"
+      }
+    ],
+    "content": "[{\"id\":\"header1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_pharmacy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pharmacy POS\",\"col\":3}},{\"id\":\"sc_lab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lab Portal\",\"col\":3}},{\"id\":\"sc_rehab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rehab Portal\",\"col\":3}},{\"id\":\"sc_patient\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient\",\"col\":3}},{\"id\":\"sc_encounter\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient Encounter\",\"col\":3}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Service Portals</b></span>\",\"col\":12}},{\"id\":\"card_pharmacy\",\"type\":\"card\",\"data\":{\"card_name\":\"Pharmacy\",\"col\":4}},{\"id\":\"card_lab\",\"type\":\"card\",\"data\":{\"card_name\":\"Lab\",\"col\":4}},{\"id\":\"card_rehab\",\"type\":\"card\",\"data\":{\"card_name\":\"Rehab\",\"col\":4}},{\"id\":\"card_patients\",\"type\":\"card\",\"data\":{\"card_name\":\"Patients\",\"col\":4}}]",
+    "links": [
+      {
+        "type": "Card Break",
+        "label": "Pharmacy",
+        "link_count": 1,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Medication",
+        "link_to": "Medication",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Lab",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Lab Test",
+        "link_to": "Lab Test",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Lab Test Template",
+        "link_to": "Lab Test Template",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Rehab",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Therapy Plan",
+        "link_to": "Therapy Plan",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Therapy Type",
+        "link_to": "Therapy Type",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Patients",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Patient",
+        "link_to": "Patient",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Patient Encounter",
+        "link_to": "Patient Encounter",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      }
+    ]
+  }
+]

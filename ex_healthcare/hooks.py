@@ -21,7 +21,7 @@ add_to_apps_screen = [
 		"logo": "/assets/ex_healthcare/images/ex_healthcare.svg",
 		"title": app_title,
 		"route": app_home,
-		"has_permission": "ex_healthcare.api.permission.has_app_permission",
+		# "has_permission": "ex_healthcare.api.permission.has_app_permission",
 	}
 ]
 

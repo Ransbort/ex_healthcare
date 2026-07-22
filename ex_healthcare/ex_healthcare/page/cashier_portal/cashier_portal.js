@@ -1892,8 +1892,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     label: 'Cashier (User)',
                     options: 'User',
                     default: frappe.session.user,
-                    read_only: 1,
-                    reqd: 1
+                    read_only: 1
                 },
                 {
                     fieldtype: 'Date',
@@ -1902,10 +1901,19 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     default: frappe.datetime.get_today(),
                     reqd: 1,
                     onchange: function() {
-                        // Auto-load when date changes
-                        const values = dialog.get_values();
-                        if (values.transaction_date) {
-                            loadTransactions(values.cashier, values.transaction_date, dialog);
+                        // Auto-load when date changes.
+                        // NOTE: use get_value() (per-field) here, not get_values()
+                        // (whole-dialog) - get_values() runs full mandatory-field
+                        // validation across every field in the dialog, which pops
+                        // the "Missing Values Required" dialog if a sibling field's
+                        // internal value hasn't finished settling yet (e.g. the
+                        // read-only `cashier` field during initial render). We only
+                        // need this field's own value here, not a validated snapshot
+                        // of the whole form.
+                        const cashier = dialog.get_value('cashier');
+                        const date = dialog.get_value('transaction_date');
+                        if (date) {
+                            loadTransactions(cashier, date, dialog);
                         }
                     }
                 },
@@ -1939,8 +1947,12 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
             },
             secondary_action_label: __('Refresh'),
             secondary_action: function() {
-                const values = dialog.get_values();
-                loadTransactions(values.cashier, values.transaction_date, dialog);
+                // Same fix as the transaction_date onchange above: read each
+                // field individually instead of calling get_values(), which
+                // would re-trigger the same false-positive mandatory check.
+                const cashier = dialog.get_value('cashier');
+                const date = dialog.get_value('transaction_date');
+                loadTransactions(cashier, date, dialog);
             }
         });
 

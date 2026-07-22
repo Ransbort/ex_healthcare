@@ -1,6 +1,5 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-
 from ex_healthcare.ex_healthcare.workspace_installer import (
 	workspace_installer,
 	workspace_remover,
@@ -35,7 +34,6 @@ def delete_custom_fields(custom_fields: dict):
 				"dt": doctype,
 			},
 		)
-
 		frappe.clear_cache(doctype=doctype)
 
 
@@ -44,6 +42,12 @@ def get_custom_fields():
 		# Pharmacy POS: tags the Sales Order as pharmacy-originated, links it
 		# to the dispensing Patient, and links each line item back to the
 		# Medication Request it was dispensed against.
+		#
+		# custom_department: used by the Cashier Portal
+		# (page/cashier_portal/cashier_portal.py) to bucket a party's open
+		# orders into Pharmacy/Laboratory/Rehabilitation/Other tabs -
+		# without this field, _get_department_invoices()/_get_pharmacy_orders()
+		# throw "Unknown column 'custom_department'".
 		"Sales Order": [
 			{
 				"fieldname": "custom_invoice_from",
@@ -60,6 +64,15 @@ def get_custom_fields():
 				"fieldtype": "Link",
 				"insert_after": "custom_invoice_from",
 				"options": "Patient",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "custom_department",
+				"label": "Department",
+				"fieldtype": "Select",
+				"insert_after": "custom_patient",
+				"options": "\nPharmacy\nLaboratory\nRehabilitation\nOther",
 				"reqd": 0,
 				"hidden": 0,
 			},
@@ -86,6 +99,10 @@ def get_custom_fields():
 		],
 		# Spa Portal: tags Sales Invoices created from create_spa_invoice()
 		# so get_spa_invoices() can filter to spa-originated invoices only.
+		#
+		# custom_department: same Cashier Portal bucketing as on Sales Order
+		# above, applied to Sales Invoice (_get_department_invoices() reads
+		# this field on both doctypes).
 		"Sales Invoice": [
 			{
 				"fieldname": "custom_invoice_from",
@@ -93,6 +110,15 @@ def get_custom_fields():
 				"fieldtype": "Select",
 				"insert_after": "customer",
 				"options": "\nPharmacy\nSpa",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "custom_department",
+				"label": "Department",
+				"fieldtype": "Select",
+				"insert_after": "custom_invoice_from",
+				"options": "\nPharmacy\nLaboratory\nRehabilitation\nOther",
 				"reqd": 0,
 				"hidden": 0,
 			},

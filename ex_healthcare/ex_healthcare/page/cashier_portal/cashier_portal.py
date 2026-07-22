@@ -72,10 +72,32 @@ def get_customer_data(customer_id):
     }
 
 
-def _party_filters(party_id, party_type):
-    """party_type is 'patient' or 'customer' (lowercase, matches search_type)."""
+def _get_customer_for_patient(patient_id):
+    """Sales Order and Payment Entry are only ever linked to a Customer, not
+    a Patient (that link only exists on Sales Invoice via the healthcare
+    domain). So when the portal is searching 'by Patient', we need the
+    Patient's linked Customer to find their orders/payments at all -
+    filtering those doctypes directly on `patient` silently returns nothing."""
+    customer = frappe.db.get_value("Patient", patient_id, "customer")
+    if not customer:
+        frappe.throw(
+            _("Patient {0} has no linked Customer - cannot look up orders or payments").format(patient_id)
+        )
+    return customer
+
+
+def _party_filters(party_id, party_type, doctype="Sales Invoice"):
+    """party_type is 'patient' or 'customer' (lowercase, matches search_type).
+
+    doctype matters: Sales Invoice can carry a real `patient` link (healthcare
+    domain field), but Sales Order and Payment Entry cannot - those must
+    always be filtered by `customer`, so a patient search has to resolve to
+    the linked customer first.
+    """
     if party_type == "patient":
-        return {"patient": party_id}
+        if doctype == "Sales Invoice":
+            return {"patient": party_id}
+        return {"customer": _get_customer_for_patient(party_id)}
     return {"customer": party_id}
 
 
@@ -84,7 +106,7 @@ def _get_department_invoices(party_id, party_type, department=None, exclude_depa
         "docstatus": 1,
         "outstanding_amount": [">", 0],
     }
-    filters.update(_party_filters(party_id, party_type))
+    filters.update(_party_filters(party_id, party_type, doctype="Sales Invoice"))
 
     if department:
         filters[DEPARTMENT_FIELD] = department
@@ -111,7 +133,7 @@ def _get_pharmacy_orders(party_id, party_type):
         DEPARTMENT_FIELD: "Pharmacy",
         "per_billed": ["<", 100],
     }
-    filters.update(_party_filters(party_id, party_type))
+    filters.update(_party_filters(party_id, party_type, doctype="Sales Order"))
 
     orders = frappe.get_all(
         "Sales Order",
@@ -126,11 +148,19 @@ def _get_pharmacy_orders(party_id, party_type):
 
 
 def _get_payment_history(party_id, party_type):
+    """Payment Entry only ever has party_type 'Customer' in ERPNext - there's
+    no 'Patient' party type - so a patient-based lookup must resolve to the
+    linked customer first, same as pharmacy orders above."""
+    if party_type == "Patient":
+        customer = _get_customer_for_patient(party_id)
+    else:
+        customer = party_id
+
     payments = frappe.get_all(
         "Payment Entry",
         filters={
-            "party_type": party_type,
-            "party": party_id,
+            "party_type": "Customer",
+            "party": customer,
             "docstatus": 1,
         },
         fields=[

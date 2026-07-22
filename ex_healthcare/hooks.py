@@ -14,7 +14,7 @@ required_apps = ["erpnext", "healthcare"]
 add_to_apps_screen = [
 	{
 		"name": "ex_healthcare",
-		"logo": "/assets/ex_healthcare/images/ex_healthcare.png",
+		"logo": "/assets/ex_healthcare/images/ex_healthcare.svg",
 		"title": "Ex Healthcare",
 		"route": "/app/ex-healthcare",
 		"has_permission": "ex_healthcare.api.permission.has_app_permission"

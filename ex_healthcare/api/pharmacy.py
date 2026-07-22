@@ -117,6 +117,20 @@ def update_medication_requests(updates, allow_oversell=False):
 		updates: JSON string or list of {"name": <Medication Request name>, "qty": <int>}
 		allow_oversell: if truthy, skip the "don't exceed remaining qty" guard
 			(matches Ex Healthcare Settings.allow_oversell_medication)
+
+	IMPORTANT: each successful update is committed immediately (frappe.db.commit())
+	inside the loop, rather than only at the end of the whitelisted call. If one
+	Medication Request in the batch fails and we later call frappe.throw() to
+	surface the aggregated errors, that throw raises an exception - and Frappe
+	rolls back the *entire* request's uncommitted transaction on an unhandled
+	exception. Without committing per-item, a single bad item at the end of a
+	multi-item cart would silently wipe out the qty_invoiced/billing_status
+	updates already applied to every other (successfully updated) Medication
+	Request earlier in the same loop - even though their Sales Order had
+	already been created and stock had already moved. Those medications would
+	then still show billing_status = Pending/Partly Invoiced and get pulled
+	back into the cart the next time "Load Prescriptions" runs for that
+	patient, effectively double-counting an already-sold item.
 	"""
 
 	if isinstance(updates, str):
@@ -166,9 +180,21 @@ def update_medication_requests(updates, allow_oversell=False):
 					"billing_status", "Partly Invoiced", update_modified=True
 				)
 
+			# Commit NOW, per-item. This is the fix: without this, a later
+			# item's failure + the frappe.throw() below would roll back this
+			# (and every other already-succeeded) update in the same request,
+			# even though the underlying Sales Order/stock movement already
+			# happened and can't be undone. Committing per-item makes each
+			# Medication Request's billing state durable independent of what
+			# happens to the rest of the batch.
+			frappe.db.commit()
+
 			updated.append(med_req_name)
 
 		except Exception:
+			# Only this item's partial writes (if any) get rolled back -
+			# nothing committed by prior iterations is affected.
+			frappe.db.rollback()
 			frappe.log_error(
 				title="Pharmacy POS: update_medication_requests failed",
 				message=frappe.get_traceback(),
@@ -178,6 +204,9 @@ def update_medication_requests(updates, allow_oversell=False):
 	if errors:
 		# Surface partial failures to the caller; JS catches this and shows
 		# a non-blocking orange warning without rolling back the Sales Order.
+		# Safe to throw here now - every successful update above has already
+		# been committed independently, so this exception can only affect
+		# whatever wasn't committed yet (i.e. nothing, since we commit inline).
 		frappe.throw(
 			_("Some Medication Requests could not be fully updated:<br>{0}").format(
 				"<br>".join(errors)

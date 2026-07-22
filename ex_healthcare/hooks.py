@@ -1,26 +1,30 @@
 app_name = "ex_healthcare"
 app_title = "Ex Healthcare"
 app_publisher = "Ransbort"
-app_description = "Healthcare module built on Marley Healthcare -- Frappe"
+app_description = "Healthcare module built on top of Marley Healthcare -- Frappe"
 app_email = "ransbort@outlook.com"
 app_license = "mit"
-
+ 
+required_apps = ["frappe/erpnext", "healthcare"]
+ 
+# Reused below in add_to_apps_screen -- change this one line to change
+# where clicking the Ex Healthcare app icon takes the user.
+app_home = "/desk/ex-healthcare"
+ 
 # Apps
 # ------------------
-
-required_apps = ["frappe/erpnext", "healthcare"]
-app_home = "/desk/healthcare"
-
+ 
 # Each item in the list will be shown as an app in the apps page
 add_to_apps_screen = [
 	{
-		"name": "ex_healthcare",
+		"name": app_name,
 		"logo": "/assets/ex_healthcare/images/ex_healthcare.svg",
-		"title": "Ex Healthcare",
+		"title": app_title,
 		"route": app_home,
-		"has_permission": "ex_healthcare.api.permission.has_app_permission"
+		"has_permission": "ex_healthcare.api.permission.has_app_permission",
 	}
 ]
+
 
 # Includes in <head>
 # ------------------

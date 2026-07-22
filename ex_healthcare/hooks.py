@@ -5,7 +5,7 @@ app_description = "Healthcare module built on top of Marley Healthcare -- Frappe
 app_email = "ransbort@outlook.com"
 app_license = "mit"
  
-required_apps = ["frappe/erpnext", "healthcare"]
+required_apps = ["healthcare"]
  
 # Reused below in add_to_apps_screen -- change this one line to change
 # where clicking the Ex Healthcare app icon takes the user.

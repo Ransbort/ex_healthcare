@@ -145,6 +145,23 @@ def get_custom_fields():
 				"hidden": 0,
 			},
 		],
+		# Lab Portal: links a Lab Test back to the Sales Invoice created for
+		# it in accept_lab_request(). lab_portal.py's get_pending_labs() and
+		# accept_lab_request() both read/write this field directly -
+		# without it, get_pending_labs() throws "Unknown column
+		# 'lt.custom_invoice'" since Lab Test has no built-in Sales Invoice
+		# link (only a boolean `invoiced` Check field).
+		"Lab Test": [
+			{
+				"fieldname": "custom_invoice",
+				"label": "Invoice",
+				"fieldtype": "Link",
+				"insert_after": "invoiced",
+				"options": "Sales Invoice",
+				"reqd": 0,
+				"hidden": 0,
+			},
+		],
 		# Rehab Portal: same pattern as Lab Prescription, for therapies.
 		"Therapy Plan Detail": [
 			{

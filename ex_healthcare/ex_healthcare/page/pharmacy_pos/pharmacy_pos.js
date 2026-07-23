@@ -2534,6 +2534,35 @@ class PharmacyPOS {
 		try {
 			frappe.dom.freeze(__('Creating Sales Order...'));
 
+			// Resolve the Patient's actual linked Customer instead of assuming
+			// the Patient ID and Customer name are identical - they aren't
+			// guaranteed to match (e.g. spacing differences, or a Patient
+			// created without an auto-generated Customer).
+			let resolved_customer = this.customer;
+
+			if (this.patient) {
+				const patient_resp = await frappe.call({
+					method: 'frappe.client.get_value',
+					args: {
+						doctype: 'Patient',
+						filters: { name: this.patient },
+						fieldname: 'customer'
+					}
+				});
+
+				resolved_customer = patient_resp.message && patient_resp.message.customer;
+
+				if (!resolved_customer) {
+					frappe.dom.unfreeze();
+					frappe.msgprint({
+						title: __('Missing Customer Link'),
+						message: __('Patient {0} has no linked Customer record, so a Sales Order cannot be created for them. Please link a Customer to this Patient first.', [this.patient]),
+						indicator: 'red'
+					});
+					return;
+				}
+			}
+
 			const items = this.cart_items.map(item => ({
 				item_code: item.item_code,
 				qty: item.qty,
@@ -2549,13 +2578,13 @@ class PharmacyPOS {
 				transaction_date: frappe.datetime.get_today(),
 				delivery_date: frappe.datetime.get_today(),
 				custom_invoice_from: 'Pharmacy',
-				custom_department: 'Pharmacy',   // <-- add this: cashier_portal.py filters on this field
+				custom_department: 'Pharmacy',
 				items: items
 			};
 
 			if (this.patient) {
 				sales_order_doc.custom_patient = this.patient;
-				sales_order_doc.customer = this.patient;
+				sales_order_doc.customer = resolved_customer;
 			} else {
 				sales_order_doc.customer = this.customer;
 			}
@@ -2686,7 +2715,6 @@ class PharmacyPOS {
 				args: {
 					doctype: 'Sales Order',
 					filters: {
-						owner: frappe.session.user,
 						custom_invoice_from: 'Pharmacy',
 						transaction_date: today
 					},
@@ -2739,7 +2767,7 @@ class PharmacyPOS {
 		const header = $(`
 			<div class="orders-header-fixed">
 				<div class="orders-header">
-					<div class="cart-title" style="color: var(--text-primary);">📋 My Sales Orders</div>
+					<div class="cart-title" style="color: var(--text-primary);">📋 Today's Pharmacy Orders</div>
 					<div class="daily-total">Today: ₵${daily_total.toFixed(2)}</div>
 				</div>
 			</div>

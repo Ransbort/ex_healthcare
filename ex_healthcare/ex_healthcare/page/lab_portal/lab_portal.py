@@ -22,8 +22,12 @@ Everything else here was already verified working:
   gets set once accept_lab_request() creates the Lab Test doc.
 - `Lab Test Template` has an `item` field linking to a stock/service Item
   (standard in ERPNext Healthcare).
-- `Lab Test` has fields: patient, template, prescription, invoice, status.
-- Payment status is read off the linked Sales Invoice's `status` field.
+- `Lab Test` has fields: patient, template, prescription (Link -> Lab
+  Prescription, not Patient Encounter), status, invoiced (Check). It has NO
+  built-in Sales Invoice link - `custom_invoice` (Link -> Sales Invoice) is
+  a CUSTOM field added specifically for this portal (see setup.py).
+- Payment status is read off the linked Sales Invoice's `status` field via
+  Lab Test.custom_invoice.
 """
 
 import frappe
@@ -126,7 +130,7 @@ def get_pending_labs(search_patient=None, search_encounter=None, search_date=Non
 		INNER JOIN `tabPatient Encounter` pe ON pe.name = lp.parent
 		INNER JOIN `tabLab Test` lt ON lt.name = lp.custom_lab_test
 		LEFT JOIN `tabLab Test Template` ltt ON ltt.name = lp.lab_test_code
-		LEFT JOIN `tabSales Invoice` si ON si.name = lt.invoice
+		LEFT JOIN `tabSales Invoice` si ON si.name = lt.custom_invoice
 		WHERE {where_clause}
 		ORDER BY pe.encounter_date DESC
 		""",
@@ -233,8 +237,14 @@ def accept_lab_request(prescription_id, patient_id, encounter_id, lab_test_code)
 			"doctype": "Lab Test",
 			"patient": patient_id,
 			"template": lab_test_code,
-			"prescription": encounter_id,
-			"invoice": invoice.name,
+			# `prescription` is a Link to Lab Prescription, NOT Patient
+			# Encounter - encounter_id was being written here before,
+			# silently pointing at the wrong doctype's records.
+			"prescription": prescription_row.name,
+			# Lab Test has no "invoice" field - only the boolean `invoiced`
+			# Check. custom_invoice (added in setup.py) is what actually
+			# links back to the Sales Invoice.
+			"custom_invoice": invoice.name,
 			"status": "Draft",
 		}
 	)

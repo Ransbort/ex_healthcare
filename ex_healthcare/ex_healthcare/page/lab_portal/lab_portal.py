@@ -4,17 +4,22 @@
 """
 Backend for the Lab Portal page (page/lab_portal/lab_portal.js).
 
-ASSUMPTIONS TO VERIFY against your real schema (same pattern as pharmacy.py --
-expect an "Unknown column" error or two the first time this runs, then a
-one-line fix, same as we did for get_pos_medications):
+Schema notes confirmed against the real site (see console checks in chat):
+- `Patient Encounter.diagnosis` is a Table MultiSelect field backed by the
+  child doctype `Patient Encounter Diagnosis`, NOT a plain column - it can't
+  be selected directly as `pe.diagnosis` in raw SQL. Pulled via a correlated
+  GROUP_CONCAT subquery instead (see _diagnosis_subquery below).
+- `Patient Encounter Diagnosis.diagnosis` is a Link to the `Diagnosis`
+  doctype, and Diagnosis records are named by their diagnosis text itself,
+  so the linked value doubles as display text - no extra join needed.
 
+Everything else here was already verified working:
 - `Patient Encounter` has a child table `lab_test_prescription`
   (child doctype `Lab Prescription`) with fields: lab_test_code,
   lab_test_comment, invoiced (Check).
 - `Lab Prescription` has a CUSTOM field `custom_priority` (Select: High/
   Medium/Low) and a CUSTOM field `custom_lab_test` (Link -> Lab Test) that
-  gets set once accept_lab_request() creates the Lab Test doc. If these
-  don't exist yet, add them via Customize Form on "Lab Prescription".
+  gets set once accept_lab_request() creates the Lab Test doc.
 - `Lab Test Template` has an `item` field linking to a stock/service Item
   (standard in ERPNext Healthcare).
 - `Lab Test` has fields: patient, template, prescription, invoice, status.
@@ -24,6 +29,17 @@ one-line fix, same as we did for get_pos_medications):
 import frappe
 from frappe import _
 from frappe.utils import today
+
+# Correlated subquery: aggregates every diagnosis linked to an encounter
+# into one comma-separated string. `pe` must already be joined/aliased in
+# the outer query for the `pe.name` reference here to resolve.
+_DIAGNOSIS_SUBQUERY = """
+	(
+		SELECT GROUP_CONCAT(ped.diagnosis SEPARATOR ', ')
+		FROM `tabPatient Encounter Diagnosis` ped
+		WHERE ped.parent = pe.name
+	) AS diagnosis
+"""
 
 
 def _lab_search_conditions(search_patient, search_encounter, search_date, date_field="pe.encounter_date"):
@@ -66,7 +82,7 @@ def get_requested_labs(search_patient=None, search_encounter=None, search_date=N
 			pe.patient_name AS patient_name,
 			pe.encounter_date AS encounter_date,
 			pe.practitioner AS practitioner,
-			pe.diagnosis AS diagnosis
+			{_DIAGNOSIS_SUBQUERY}
 		FROM `tabLab Prescription` lp
 		INNER JOIN `tabPatient Encounter` pe ON pe.name = lp.parent
 		LEFT JOIN `tabLab Test Template` ltt ON ltt.name = lp.lab_test_code
@@ -104,7 +120,7 @@ def get_pending_labs(search_patient=None, search_encounter=None, search_date=Non
 			pe.patient_name AS patient_name,
 			pe.encounter_date AS encounter_date,
 			pe.practitioner AS practitioner,
-			pe.diagnosis AS diagnosis,
+			{_DIAGNOSIS_SUBQUERY},
 			si.status AS invoice_status
 		FROM `tabLab Prescription` lp
 		INNER JOIN `tabPatient Encounter` pe ON pe.name = lp.parent
@@ -150,7 +166,7 @@ def get_completed_labs(search_patient=None, search_encounter=None, filter_date=N
 			pe.patient_name AS patient_name,
 			pe.encounter_date AS encounter_date,
 			pe.practitioner AS practitioner,
-			pe.diagnosis AS diagnosis
+			{_DIAGNOSIS_SUBQUERY}
 		FROM `tabLab Prescription` lp
 		INNER JOIN `tabPatient Encounter` pe ON pe.name = lp.parent
 		INNER JOIN `tabLab Test` lt ON lt.name = lp.custom_lab_test

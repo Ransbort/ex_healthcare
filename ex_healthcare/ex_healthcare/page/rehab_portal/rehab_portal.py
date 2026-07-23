@@ -10,7 +10,18 @@ ASSUMPTIONS TO VERIFY:
 
 - `Patient Encounter` has a child table `therapies` (child doctype
   `Therapy Plan Detail` -- standard in ERPNext Healthcare) with fields:
-  therapy_type, no_of_sessions, interval, invoiced (Check).
+  therapy_type, no_of_sessions, interval, sessions_completed, service_request,
+  patient_care_type, intent, priority. CONFIRMED via DESCRIBE
+  `tabTherapy Plan Detail`: there is NO `invoiced` field on this child
+  doctype (unlike Lab Prescription, which does have one) - "has this row
+  been accepted into a Therapy Plan yet" is tracked purely by whether
+  `custom_therapy_plan` is NULL (not yet accepted / Requested) or set
+  (accepted / Pending or Completed, depending on the linked Therapy Plan's
+  status).
+- Note: `Therapy Plan Detail` already has a native `priority` field (Select/
+  Data, populated by DESCRIBE) separate from the `custom_priority` field
+  added via setup.py. These may be redundant - worth reconciling later,
+  but not blocking anything currently.
 - `Therapy Plan Detail` has CUSTOM fields `custom_priority` and
   `custom_therapy_plan` (Link -> Therapy Plan), set once
   accept_therapy_request() creates the Therapy Plan doc.
@@ -75,7 +86,7 @@ def get_requested_therapies(search_patient=None, search_encounter=None, search_d
 	"""Therapies prescribed on an encounter but not yet accepted/invoiced."""
 
 	conditions, values = _rehab_search_conditions(search_patient, search_encounter, search_date)
-	conditions.insert(0, "tpd.invoiced = 0")
+	conditions.insert(0, "tpd.custom_therapy_plan IS NULL")
 	where_clause = " AND ".join(conditions)
 
 	return frappe.db.sql(
@@ -108,7 +119,6 @@ def get_pending_therapies(search_patient=None, search_encounter=None, search_dat
 
 	conditions, values = _rehab_search_conditions(search_patient, search_encounter, search_date)
 	conditions[0:0] = [
-		"tpd.invoiced = 1",
 		"tpd.custom_therapy_plan IS NOT NULL",
 		"tp.status != 'Completed'",
 	]
@@ -155,7 +165,6 @@ def get_completed_therapies(search_patient=None, search_encounter=None, filter_d
 		search_patient, search_encounter, filter_date, date_field="DATE(tp.modified)"
 	)
 	conditions[0:0] = [
-		"tpd.invoiced = 1",
 		"tpd.custom_therapy_plan IS NOT NULL",
 		"tp.status = 'Completed'",
 	]
@@ -253,7 +262,6 @@ def accept_therapy_request(therapy_id, patient_id, encounter_id, therapy_type):
 	therapy_plan.insert(ignore_permissions=True)
 
 	therapy_row.db_set("custom_therapy_plan", therapy_plan.name)
-	therapy_row.db_set("invoiced", 1)
 
 	return {
 		"status": "Success",

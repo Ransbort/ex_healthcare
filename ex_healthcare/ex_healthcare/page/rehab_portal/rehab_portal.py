@@ -244,6 +244,12 @@ def accept_therapy_request(therapy_id, patient_id, encounter_id, therapy_type):
 	invoice.insert(ignore_permissions=True)
 	invoice.submit()
 
+	default_company = frappe.defaults.get_user_default("Company") or frappe.db.get_single_value(
+		"Global Defaults", "default_company"
+	)
+	if not default_company:
+		frappe.throw(_("No default Company is configured - cannot create Therapy Plan without one"))
+
 	therapy_plan = frappe.get_doc(
 		{
 			"doctype": "Therapy Plan",
@@ -251,6 +257,18 @@ def accept_therapy_request(therapy_id, patient_id, encounter_id, therapy_type):
 			"patient_name": patient.patient_name,
 			"custom_invoice": invoice.name,
 			"status": "Draft",
+			# Mandatory on Therapy Plan - confirmed via
+			# frappe.get_meta("Therapy Plan") reqd field check.
+			# start_date: no obvious source elsewhere, so default to today.
+			# practitioner: pulled from the originating encounter, same as
+			# how patient/patient_name are sourced from the Patient doc.
+			# company: not auto-filled the way it is on Sales Invoice
+			# (which goes through accounts_controller's set_missing_values);
+			# Therapy Plan has no equivalent auto-fill, so resolve it
+			# explicitly from the site's default company.
+			"start_date": today(),
+			"practitioner": encounter.practitioner,
+			"company": default_company,
 			"therapy_plan_details": [
 				{
 					"therapy_type": therapy_type,

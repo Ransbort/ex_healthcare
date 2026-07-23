@@ -16,9 +16,12 @@ ASSUMPTIONS TO VERIFY:
   accept_therapy_request() creates the Therapy Plan doc.
 - `Therapy Type` has an `item` field linking to a billable Item (standard
   in ERPNext Healthcare).
-- `Therapy Plan` has fields: patient, therapy_plan_details (or similar),
-  status, invoice. Adjust the INSERT in accept_therapy_request if your
-  Therapy Plan schema stores sessions differently.
+- `Therapy Plan` has fields: patient, patient_name, status, therapy_plan_details
+  (child table, not shown in DESCRIBE since child tables live in their own
+  table). It has NO built-in `invoice` field and NO `patient_sex` field -
+  confirmed via DESCRIBE `tabTherapy Plan` in bench console. `custom_invoice`
+  (Link -> Sales Invoice) is a CUSTOM field, same pattern as Lab Test's
+  custom_invoice - see setup.py.
 
 SQL NOTES (mirrors lab_portal.py's schema notes):
 - `interval` is a reserved word in MySQL/MariaDB. `tpd.interval` as a
@@ -130,7 +133,7 @@ def get_pending_therapies(search_patient=None, search_encounter=None, search_dat
 		FROM `tabTherapy Plan Detail` tpd
 		INNER JOIN `tabPatient Encounter` pe ON pe.name = tpd.parent
 		INNER JOIN `tabTherapy Plan` tp ON tp.name = tpd.custom_therapy_plan
-		LEFT JOIN `tabSales Invoice` si ON si.name = tp.invoice
+		LEFT JOIN `tabSales Invoice` si ON si.name = tp.custom_invoice
 		WHERE {where_clause}
 		ORDER BY pe.encounter_date DESC
 		""",
@@ -236,13 +239,8 @@ def accept_therapy_request(therapy_id, patient_id, encounter_id, therapy_type):
 		{
 			"doctype": "Therapy Plan",
 			"patient": patient_id,
-			# patient_name/patient_sex may well be mandatory here too, the
-			# same way they were on Lab Test (see lab_portal.py) - fetching
-			# them explicitly rather than assuming Frappe backfills them via
-			# fetch_from during a direct server-side insert.
 			"patient_name": patient.patient_name,
-			"patient_sex": patient.sex,
-			"invoice": invoice.name,
+			"custom_invoice": invoice.name,
 			"status": "Draft",
 			"therapy_plan_details": [
 				{

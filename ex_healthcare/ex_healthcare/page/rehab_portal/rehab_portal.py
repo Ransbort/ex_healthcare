@@ -19,11 +19,33 @@ ASSUMPTIONS TO VERIFY:
 - `Therapy Plan` has fields: patient, therapy_plan_details (or similar),
   status, invoice. Adjust the INSERT in accept_therapy_request if your
   Therapy Plan schema stores sessions differently.
+
+SQL NOTES (mirrors lab_portal.py's schema notes):
+- `interval` is a reserved word in MySQL/MariaDB. `tpd.interval` as a
+  table-qualified column reference is fine, but using it unquoted as an
+  alias (`AS interval`) breaks the parser - it must be backtick-quoted
+  (`AS \`interval\``) same as any other reserved-word identifier.
+- `Patient Encounter.diagnosis` is a Table MultiSelect field backed by the
+  child doctype `Patient Encounter Diagnosis`, NOT a plain column - it can't
+  be selected directly as `pe.diagnosis` in raw SQL (same issue documented
+  in lab_portal.py). Pulled via a correlated GROUP_CONCAT subquery instead
+  (see _DIAGNOSIS_SUBQUERY below).
 """
 
 import frappe
 from frappe import _
 from frappe.utils import today
+
+# Correlated subquery: aggregates every diagnosis linked to an encounter
+# into one comma-separated string. `pe` must already be joined/aliased in
+# the outer query for the `pe.name` reference here to resolve.
+_DIAGNOSIS_SUBQUERY = """
+	(
+		SELECT GROUP_CONCAT(ped.diagnosis SEPARATOR ', ')
+		FROM `tabPatient Encounter Diagnosis` ped
+		WHERE ped.parent = pe.name
+	) AS diagnosis
+"""
 
 
 def _rehab_search_conditions(search_patient, search_encounter, search_date, date_field="pe.encounter_date"):
@@ -59,14 +81,14 @@ def get_requested_therapies(search_patient=None, search_encounter=None, search_d
 			tpd.name AS therapy_id,
 			tpd.therapy_type AS therapy_type,
 			tpd.no_of_sessions AS no_of_sessions,
-			tpd.interval AS interval,
+			tpd.interval AS `interval`,
 			tpd.custom_priority AS priority,
 			pe.name AS encounter_id,
 			pe.patient AS patient,
 			pe.patient_name AS patient_name,
 			pe.encounter_date AS encounter_date,
 			pe.practitioner AS practitioner,
-			pe.diagnosis AS diagnosis
+			{_DIAGNOSIS_SUBQUERY}
 		FROM `tabTherapy Plan Detail` tpd
 		INNER JOIN `tabPatient Encounter` pe ON pe.name = tpd.parent
 		WHERE {where_clause}
@@ -95,7 +117,7 @@ def get_pending_therapies(search_patient=None, search_encounter=None, search_dat
 			tpd.name AS therapy_id,
 			tpd.therapy_type AS therapy_type,
 			tpd.no_of_sessions AS no_of_sessions,
-			tpd.interval AS interval,
+			tpd.interval AS `interval`,
 			tpd.custom_priority AS priority,
 			tpd.custom_therapy_plan AS custom_therapy_plan,
 			pe.name AS encounter_id,
@@ -103,7 +125,7 @@ def get_pending_therapies(search_patient=None, search_encounter=None, search_dat
 			pe.patient_name AS patient_name,
 			pe.encounter_date AS encounter_date,
 			pe.practitioner AS practitioner,
-			pe.diagnosis AS diagnosis,
+			{_DIAGNOSIS_SUBQUERY},
 			si.status AS invoice_status
 		FROM `tabTherapy Plan Detail` tpd
 		INNER JOIN `tabPatient Encounter` pe ON pe.name = tpd.parent
@@ -147,7 +169,7 @@ def get_completed_therapies(search_patient=None, search_encounter=None, filter_d
 			pe.patient_name AS patient_name,
 			pe.encounter_date AS encounter_date,
 			pe.practitioner AS practitioner,
-			pe.diagnosis AS diagnosis
+			{_DIAGNOSIS_SUBQUERY}
 		FROM `tabTherapy Plan Detail` tpd
 		INNER JOIN `tabPatient Encounter` pe ON pe.name = tpd.parent
 		INNER JOIN `tabTherapy Plan` tp ON tp.name = tpd.custom_therapy_plan
@@ -178,7 +200,8 @@ def accept_therapy_request(therapy_id, patient_id, encounter_id, therapy_type):
 	if not therapy_row:
 		frappe.throw(_("Therapy Plan Detail row {0} not found on encounter {1}").format(therapy_id, encounter_id))
 
-	customer = frappe.db.get_value("Patient", patient_id, "customer")
+	patient = frappe.get_doc("Patient", patient_id)
+	customer = patient.customer
 	if not customer:
 		frappe.throw(_("Patient {0} has no linked Customer").format(patient_id))
 
@@ -213,6 +236,12 @@ def accept_therapy_request(therapy_id, patient_id, encounter_id, therapy_type):
 		{
 			"doctype": "Therapy Plan",
 			"patient": patient_id,
+			# patient_name/patient_sex may well be mandatory here too, the
+			# same way they were on Lab Test (see lab_portal.py) - fetching
+			# them explicitly rather than assuming Frappe backfills them via
+			# fetch_from during a direct server-side insert.
+			"patient_name": patient.patient_name,
+			"patient_sex": patient.sex,
 			"invoice": invoice.name,
 			"status": "Draft",
 			"therapy_plan_details": [

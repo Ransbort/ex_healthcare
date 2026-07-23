@@ -1901,19 +1901,19 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     default: frappe.datetime.get_today(),
                     reqd: 1,
                     onchange: function() {
-                        // Auto-load when date changes.
-                        // NOTE: use get_value() (per-field) here, not get_values()
-                        // (whole-dialog) - get_values() runs full mandatory-field
-                        // validation across every field in the dialog, which pops
-                        // the "Missing Values Required" dialog if a sibling field's
-                        // internal value hasn't finished settling yet (e.g. the
-                        // read-only `cashier` field during initial render). We only
-                        // need this field's own value here, not a validated snapshot
-                        // of the whole form.
-                        const cashier = dialog.get_value('cashier');
+                        // Auto-load when date changes. Use frappe.session.user
+                        // directly rather than dialog.get_value('cashier') -
+                        // that returned undefined at this point (the read-only
+                        // Link control's default hadn't necessarily "landed"
+                        // from get_value()'s perspective yet), which silently
+                        // dropped the cashier arg from the frappe.call request
+                        // entirely and caused a "missing required argument"
+                        // TypeError server-side. The cashier field always just
+                        // mirrors frappe.session.user anyway, so there's no
+                        // need to read it back out of the dialog at all.
                         const date = dialog.get_value('transaction_date');
                         if (date) {
-                            loadTransactions(cashier, date, dialog);
+                            loadTransactions(frappe.session.user, date, dialog);
                         }
                     }
                 },
@@ -1947,12 +1947,11 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
             },
             secondary_action_label: __('Refresh'),
             secondary_action: function() {
-                // Same fix as the transaction_date onchange above: read each
-                // field individually instead of calling get_values(), which
-                // would re-trigger the same false-positive mandatory check.
-                const cashier = dialog.get_value('cashier');
+                // Same fix as the transaction_date onchange above: use
+                // frappe.session.user directly instead of
+                // dialog.get_value('cashier'), which was returning undefined.
                 const date = dialog.get_value('transaction_date');
-                loadTransactions(cashier, date, dialog);
+                loadTransactions(frappe.session.user, date, dialog);
             }
         });
 

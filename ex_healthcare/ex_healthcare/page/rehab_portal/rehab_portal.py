@@ -230,6 +230,11 @@ def accept_therapy_request(therapy_id, patient_id, encounter_id, therapy_type):
 			"customer": customer,
 			"patient": patient_id,
 			"posting_date": today(),
+			# Without this, cashier_portal.py's _get_department_invoices()
+			# has no way to bucket this invoice under Rehabilitation - it
+			# would fall into "Other Invoices" instead (same issue fixed
+			# earlier for Pharmacy Sales Orders).
+			"custom_department": "Rehabilitation",
 			"items": [
 				{
 					"item_code": item_code,

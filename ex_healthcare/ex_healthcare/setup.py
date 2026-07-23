@@ -162,6 +162,22 @@ def get_custom_fields():
 				"hidden": 0,
 			},
 		],
+		# Rehab Portal: same custom_invoice pattern as Lab Test above -
+		# Therapy Plan has no built-in Sales Invoice link either (confirmed
+		# via DESCRIBE `tabTherapy Plan`: only `invoiced` Check exists, no
+		# `invoice` field). rehab_portal.py's get_pending_therapies() and
+		# accept_therapy_request() both read/write custom_invoice directly.
+		"Therapy Plan": [
+			{
+				"fieldname": "custom_invoice",
+				"label": "Invoice",
+				"fieldtype": "Link",
+				"insert_after": "invoiced",
+				"options": "Sales Invoice",
+				"reqd": 0,
+				"hidden": 0,
+			},
+		],
 		# Rehab Portal: same pattern as Lab Prescription, for therapies.
 		"Therapy Plan Detail": [
 			{

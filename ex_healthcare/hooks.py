@@ -103,14 +103,23 @@ before_uninstall = "ex_healthcare.ex_healthcare.setup.uninstall"
 
 # Migration
 # ------------
-
 # Re-installs the workspace(s) defined under
 # apps/ex_healthcare/ex_healthcare/ex_healthcare/workspace/*.json on every
 # `bench migrate`. Without this, editing a workspace JSON (adding/removing
 # shortcuts or links) never takes effect until someone manually calls
 # workspace_installer() from the bench console.
+#
+# make_custom_fields also re-runs here for the same reason: after_install
+# only fires once, at initial app install. Any custom field added to
+# setup.py's get_custom_fields() dict *after* the app was already installed
+# (custom_department, custom_invoice, etc.) would otherwise never get
+# created on existing sites - only a brand-new install would pick it up.
+# Running it on every migrate makes schema changes apply automatically
+# instead of needing a manual create_custom_fields() call from the console
+# each time.
 after_migrate = [
-	"ex_healthcare.ex_healthcare.workspace_installer.workspace_installer"
+	"ex_healthcare.ex_healthcare.setup.make_custom_fields",
+	"ex_healthcare.ex_healthcare.workspace_installer.workspace_installer",
 ]
 
 # Integration Setup

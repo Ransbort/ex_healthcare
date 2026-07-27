@@ -25,10 +25,14 @@ add_to_apps_screen = [
 	}
 ]
 
+app_include_js = "/assets/ex_healthcare/js/userRole_redirects.js"
+
 role_home_page = {
     "Pharmacist": "pharmacy-pos",   # not "desk/pharmacy-pos"
     "Cashier": "cashier-portal",
 }
+
+
 
 # Includes in <head>
 # ------------------

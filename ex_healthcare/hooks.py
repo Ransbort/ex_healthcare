@@ -25,6 +25,10 @@ add_to_apps_screen = [
 	}
 ]
 
+role_home_page = {
+    "Pharmacist": "pharmacy-pos",   # not "desk/pharmacy-pos"
+    "Cashier": "cashier-portal",
+}
 
 # Includes in <head>
 # ------------------

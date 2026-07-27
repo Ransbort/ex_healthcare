@@ -24,6 +24,12 @@
         "color": "Green"
       },
       {
+        "label": "Cashier",
+        "type": "Page",
+        "link_to": "cashier-portal",
+        "color": "Green"
+      },
+      {
         "label": "Lab Portal",
         "type": "Page",
         "link_to": "lab-portal",
@@ -39,13 +45,6 @@
         "label": "Patient",
         "type": "DocType",
         "link_to": "Patient",
-        "doc_view": "List",
-        "color": "Grey"
-      },
-      {
-        "label": "Patient Encounter",
-        "type": "DocType",
-        "link_to": "Patient Encounter",
         "doc_view": "List",
         "color": "Grey"
       }

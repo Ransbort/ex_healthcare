@@ -129,6 +129,23 @@
    "parenttype": "Workspace Sidebar"
   },
   {
+ "doctype": "Workspace Sidebar Item",
+ "idx": 2,
+ "indent": 0,
+ "child": 0,
+ "collapsible": 1,
+ "keep_closed": 0,
+ "show_arrow": 1,
+ "type": "Sidebar Item Group",
+ "icon": "layout-grid",
+ "label": "Portals",
+ "link_type": "",
+ "link_to": "",
+ "parent": "Ex Healthcare",
+ "parentfield": "items",
+ "parenttype": "Workspace Sidebar"
+},
+  {
    "doctype": "Workspace Sidebar Item",
    "idx": 3,
    "indent": 0,

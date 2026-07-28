@@ -20,4 +20,6 @@
   {"doctype": "Workspace Sidebar Item", "idx": 9, "type": "Link", "icon": "users-round", "label": "Patient", "link_to": "Patient", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
   {"doctype": "Workspace Sidebar Item", "idx": 10, "type": "Link", "icon": "file-text", "label": "Patient Encounter", "link_to": "Patient Encounter", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
   {"doctype": "Workspace Sidebar Item", "idx": 11, "type": "Link", "icon": "bed", "label": "Inpatient", "link_to": "Inpatient Record", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 12, "type": "Link", "icon": "calendar-fold", "label": "Outpatient", "link_to": "Patient Appointment", "link
+  {"doctype": "Workspace Sidebar Item", "idx": 12, "type": "Link", "icon": "calendar-fold", "label": "Outpatient", "link_to": "Patient Appointment", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"}
+ ]
+}

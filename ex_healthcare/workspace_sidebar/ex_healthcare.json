@@ -26,6 +26,7 @@
    "parentfield": "items",
    "parenttype": "Workspace Sidebar"
   },
+    {"doctype": "Workspace Sidebar Item", "idx": 2, "type": "Section Break", "icon": "layout-grid", "label": "Portals", "collapsible": 1, "keep_closed": 0, "indent": 0, "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
   {
    "doctype": "Workspace Sidebar Item",
    "idx": 6,

@@ -1,25 +1,156 @@
-{
- "app": "ex_healthcare",
- "doctype": "Workspace Sidebar",
- "header_icon": "heart",
- "module": "Ex Healthcare",
- "name": "Ex Healthcare",
- "title": "Ex Healthcare",
- "owner": "Administrator",
- "docstatus": 0,
- "idx": 0,
- "items": [
-  {"doctype": "Workspace Sidebar Item", "idx": 1, "type": "Link", "icon": "home", "label": "Home", "link_to": "Ex Healthcare", "link_type": "Workspace", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 2, "type": "Link", "icon": "healthcare", "label": "Pharmacy", "link_to": "pharmacy-pos", "link_type": "Page", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 3, "type": "Section Break", "icon": "layout-grid", "label": "Portals", "collapsible": 1, "keep_closed": 0, "indent": 0, "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 4, "type": "Link", "icon": "credit-card", "label": "Cashier Portal", "link_to": "cashier-portal", "link_type": "Page", "child": 1, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 5, "type": "Link", "icon": "activity", "label": "Lab Portal", "link_to": "lab-portal", "link_type": "Page", "child": 1, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 6, "type": "Link", "icon": "tool", "label": "Rehab Portal", "link_to": "rehab-portal", "link_type": "Page", "child": 1, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 7, "type": "Link", "icon": "sparkles", "label": "Spa Portal", "link_to": "spa-portal", "link_type": "Page", "child": 1, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 8, "type": "Link", "icon": "flask-conical", "label": "Lab", "link_to": "Lab Test", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 9, "type": "Link", "icon": "users-round", "label": "Patient", "link_to": "Patient", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 10, "type": "Link", "icon": "file-text", "label": "Patient Encounter", "link_to": "Patient Encounter", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 11, "type": "Link", "icon": "bed", "label": "Inpatient", "link_to": "Inpatient Record", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
-  {"doctype": "Workspace Sidebar Item", "idx": 12, "type": "Link", "icon": "calendar-fold", "label": "Outpatient", "link_to": "Patient Appointment", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"}
- ]
-}
+[
+  {
+    "doctype": "Workspace",
+    "name": "Ex Healthcare",
+    "title": "Ex Healthcare",
+    "label": "Ex Healthcare",
+    "module": "Ex Healthcare",
+    "icon": "heart",
+    "indicator_color": "green",
+    "public": 1,
+    "is_hidden": 0,
+    "hide_custom": 0,
+    "sequence_id": 0.0,
+    "roles": [],
+    "charts": [],
+    "number_cards": [],
+    "custom_blocks": [],
+    "quick_lists": [],
+    "shortcuts": [
+      {
+        "label": "Pharmacy",
+        "type": "Page",
+        "link_to": "pharmacy-pos",
+        "color": "Green",
+        "icon": "money"
+      },
+      {
+        "label": "Cashier",
+        "type": "Page",
+        "link_to": "cashier-portal",
+        "color": "Green",
+        "icon": "credit-card"
+      },
+      {
+        "label": "Lab Portal",
+        "type": "Page",
+        "link_to": "lab-portal",
+        "color": "Blue",
+        "icon": "activity"
+      },
+      {
+        "label": "Rehab Portal",
+        "type": "Page",
+        "link_to": "rehab-portal",
+        "color": "Orange",
+        "icon": "tool"
+      },
+      {
+        "label": "Patient",
+        "type": "DocType",
+        "link_to": "Patient",
+        "doc_view": "List",
+        "color": "Grey",
+        "icon": "user"
+      }
+    ],
+    "content": "[{\"id\":\"header1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_pharmacy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pharmacy\",\"col\":3}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cashier\",\"col\":3}},{\"id\":\"sc_lab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lab Portal\",\"col\":3}},{\"id\":\"sc_rehab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rehab Portal\",\"col\":3}},{\"id\":\"sc_patient\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient\",\"col\":3}},{\"id\":\"sc_encounter\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient Encounter\",\"col\":3}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Service Portals</b></span>\",\"col\":12}},{\"id\":\"card_pharmacy\",\"type\":\"card\",\"data\":{\"card_name\":\"Pharmacy\",\"col\":4}},{\"id\":\"card_lab\",\"type\":\"card\",\"data\":{\"card_name\":\"Lab\",\"col\":4}},{\"id\":\"card_rehab\",\"type\":\"card\",\"data\":{\"card_name\":\"Rehab\",\"col\":4}},{\"id\":\"card_patients\",\"type\":\"card\",\"data\":{\"card_name\":\"Patients\",\"col\":4}}]",
+    "links": [
+      {
+        "type": "Card Break",
+        "label": "Pharmacy",
+        "link_count": 1,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Medication",
+        "link_to": "Medication",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Lab",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Lab Test",
+        "link_to": "Lab Test",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Lab Test Template",
+        "link_to": "Lab Test Template",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Rehab",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Therapy Plan",
+        "link_to": "Therapy Plan",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Therapy Type",
+        "link_to": "Therapy Type",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Card Break",
+        "label": "Patients",
+        "link_count": 2,
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Patient",
+        "link_to": "Patient",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      },
+      {
+        "type": "Link",
+        "label": "Patient Encounter",
+        "link_to": "Patient Encounter",
+        "link_type": "DocType",
+        "hidden": 0,
+        "is_query_report": 0,
+        "onboard": 0
+      }
+    ]
+  }
+]

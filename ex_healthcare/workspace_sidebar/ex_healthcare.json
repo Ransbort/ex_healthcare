@@ -9,7 +9,6 @@
  "docstatus": 0,
  "idx": 0,
  "items": [
-   "items": [
   {
     "doctype": "Workspace Sidebar Item",
     "idx": 1,
@@ -245,6 +244,5 @@
     "parentfield": "items",
     "parenttype": "Workspace Sidebar"
   }
-]
  ]
 }

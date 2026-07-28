@@ -39,7 +39,7 @@
         "icon": "activity"
       },
       {
-        "label": "Rehab Portal",
+        "label": "Rehab",
         "type": "Page",
         "link_to": "rehab-portal",
         "color": "Orange",

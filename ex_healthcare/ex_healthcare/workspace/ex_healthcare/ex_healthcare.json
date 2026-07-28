@@ -1,156 +1,93 @@
-[
-  {
-    "doctype": "Workspace",
-    "name": "Ex Healthcare",
-    "title": "Ex Healthcare",
-    "label": "Ex Healthcare",
-    "module": "Ex Healthcare",
-    "icon": "heart",
-    "indicator_color": "green",
-    "public": 1,
-    "is_hidden": 0,
-    "hide_custom": 0,
-    "sequence_id": 0.0,
-    "roles": [],
-    "charts": [],
-    "number_cards": [],
-    "custom_blocks": [],
-    "quick_lists": [],
-    "shortcuts": [
-      {
-        "label": "Pharmacy",
-        "type": "Page",
-        "link_to": "pharmacy-pos",
-        "color": "Green",
-        "icon": "money"
-      },
-      {
-        "label": "Cashier",
-        "type": "Page",
-        "link_to": "cashier-portal",
-        "color": "Green",
-        "icon": "credit-card"
-      },
-      {
-        "label": "Lab Portal",
-        "type": "Page",
-        "link_to": "lab-portal",
-        "color": "Blue",
-        "icon": "activity"
-      },
-      {
-        "label": "Rehab",
-        "type": "Page",
-        "link_to": "rehab-portal",
-        "color": "Orange",
-        "icon": "tool"
-      },
-      {
-        "label": "Patient",
-        "type": "DocType",
-        "link_to": "Patient",
-        "doc_view": "List",
-        "color": "Grey",
-        "icon": "user"
-      }
-    ],
-    "content": "[{\"id\":\"header1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_pharmacy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pharmacy\",\"col\":3}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cashier\",\"col\":3}},{\"id\":\"sc_lab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lab Portal\",\"col\":3}},{\"id\":\"sc_rehab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rehab Portal\",\"col\":3}},{\"id\":\"sc_patient\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient\",\"col\":3}},{\"id\":\"sc_encounter\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient Encounter\",\"col\":3}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Service Portals</b></span>\",\"col\":12}},{\"id\":\"card_pharmacy\",\"type\":\"card\",\"data\":{\"card_name\":\"Pharmacy\",\"col\":4}},{\"id\":\"card_lab\",\"type\":\"card\",\"data\":{\"card_name\":\"Lab\",\"col\":4}},{\"id\":\"card_rehab\",\"type\":\"card\",\"data\":{\"card_name\":\"Rehab\",\"col\":4}},{\"id\":\"card_patients\",\"type\":\"card\",\"data\":{\"card_name\":\"Patients\",\"col\":4}}]",
-    "links": [
-      {
-        "type": "Card Break",
-        "label": "Pharmacy",
-        "link_count": 1,
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Link",
-        "label": "Medication",
-        "link_to": "Medication",
-        "link_type": "DocType",
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Card Break",
-        "label": "Lab",
-        "link_count": 2,
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Link",
-        "label": "Lab Test",
-        "link_to": "Lab Test",
-        "link_type": "DocType",
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Link",
-        "label": "Lab Test Template",
-        "link_to": "Lab Test Template",
-        "link_type": "DocType",
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Card Break",
-        "label": "Rehab",
-        "link_count": 2,
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Link",
-        "label": "Therapy Plan",
-        "link_to": "Therapy Plan",
-        "link_type": "DocType",
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Link",
-        "label": "Therapy Type",
-        "link_to": "Therapy Type",
-        "link_type": "DocType",
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Card Break",
-        "label": "Patients",
-        "link_count": 2,
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Link",
-        "label": "Patient",
-        "link_to": "Patient",
-        "link_type": "DocType",
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      },
-      {
-        "type": "Link",
-        "label": "Patient Encounter",
-        "link_to": "Patient Encounter",
-        "link_type": "DocType",
-        "hidden": 0,
-        "is_query_report": 0,
-        "onboard": 0
-      }
-    ]
-  }
-]
+{
+  "doctype": "Workspace",
+  "name": "Ex Healthcare",
+  "title": "Ex Healthcare",
+  "label": "Ex Healthcare",
+  "module": "Ex Healthcare",
+  "icon": "heart",
+  "indicator_color": "green",
+  "public": 1,
+  "is_hidden": 0,
+  "hide_custom": 0,
+  "sequence_id": 0.0,
+  "roles": [],
+  "charts": [
+    {
+      "chart_name": "Department wise Patient Appointments",
+      "label": "Department wise Patient Appointments"
+    }
+  ],
+  "number_cards": [
+    { "label": "Total Patients", "number_card_name": "Total Patients" },
+    { "label": "Total Patients Admitted", "number_card_name": "Total Patients Admitted" },
+    { "label": "Open Appointments", "number_card_name": "Open Appointments" },
+    { "label": "Appointments to Bill", "number_card_name": "Appointments to Bill" }
+  ],
+  "custom_blocks": [],
+  "quick_lists": [],
+  "shortcuts": [
+    {
+      "label": "Patient Appointment",
+      "type": "DocType",
+      "link_to": "Patient Appointment",
+      "color": "Orange",
+      "format": "{} Open",
+      "stats_filter": "{\n    \"status\": \"Open\",\n    \"company\": [\"like\", '%' + frappe.defaults.get_global_default(\"company\") + '%']\n}"
+    },
+    {
+      "label": "Patient",
+      "type": "DocType",
+      "link_to": "Patient",
+      "color": "Orange",
+      "format": "{} Active",
+      "stats_filter": "{\n    \"status\": \"Active\"\n}"
+    },
+    {
+      "label": "Healthcare Service Unit",
+      "type": "DocType",
+      "link_to": "Healthcare Service Unit",
+      "color": "Green",
+      "format": "{} Vacant",
+      "stats_filter": "{\n    \"occupancy_status\": \"Vacant\",\n    \"is_group\": 0,\n    \"company\": [\"like\", \"%\" + frappe.defaults.get_global_default(\"company\") + \"%\"]\n}"
+    },
+    {
+      "label": "Healthcare Practitioner",
+      "type": "DocType",
+      "link_to": "Healthcare Practitioner"
+    },
+    {
+      "label": "Patient History",
+      "type": "Page",
+      "link_to": "patient_history"
+    },
+    {
+      "label": "Dashboard",
+      "type": "Dashboard",
+      "link_to": "Healthcare"
+    }
+  ],
+  "content": "[{\"id\":\"chart1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Department wise Patient Appointments\",\"col\":12}},{\"id\":\"nc1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Patients\",\"col\":3}},{\"id\":\"nc2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Patients Admitted\",\"col\":3}},{\"id\":\"nc3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Open Appointments\",\"col\":3}},{\"id\":\"nc4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Appointments to Bill\",\"col\":3}},{\"id\":\"spacer0\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_appointment\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient Appointment\",\"col\":4}},{\"id\":\"sc_patient\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient\",\"col\":4}},{\"id\":\"sc_hsu\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Healthcare Service Unit\",\"col\":4}},{\"id\":\"sc_practitioner\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Healthcare Practitioner\",\"col\":4}},{\"id\":\"sc_history\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient History\",\"col\":4}},{\"id\":\"sc_dashboard\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":4}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Service Portals</b></span>\",\"col\":12}},{\"id\":\"card_pharmacy\",\"type\":\"card\",\"data\":{\"card_name\":\"Pharmacy\",\"col\":4}},{\"id\":\"card_lab\",\"type\":\"card\",\"data\":{\"card_name\":\"Lab\",\"col\":4}},{\"id\":\"card_rehab\",\"type\":\"card\",\"data\":{\"card_name\":\"Rehab\",\"col\":4}},{\"id\":\"card_patients\",\"type\":\"card\",\"data\":{\"card_name\":\"Patients\",\"col\":4}},{\"id\":\"card_inpatient\",\"type\":\"card\",\"data\":{\"card_name\":\"Inpatient\",\"col\":4}},{\"id\":\"card_outpatient\",\"type\":\"card\",\"data\":{\"card_name\":\"Outpatient\",\"col\":4}}]",
+  "links": [
+    { "type": "Card Break", "label": "Pharmacy", "link_count": 1, "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Medication", "link_to": "Medication", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Card Break", "label": "Lab", "link_count": 2, "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Lab Test", "link_to": "Lab Test", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Lab Test Template", "link_to": "Lab Test Template", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Card Break", "label": "Rehab", "link_count": 2, "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Therapy Plan", "link_to": "Therapy Plan", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Therapy Type", "link_to": "Therapy Type", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Card Break", "label": "Patients", "link_count": 2, "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Patient", "link_to": "Patient", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Patient Encounter", "link_to": "Patient Encounter", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Card Break", "label": "Inpatient", "link_count": 3, "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Inpatient Record", "link_to": "Inpatient Record", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Inpatient Medication Order", "link_to": "Inpatient Medication Order", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Inpatient Medication Entry", "link_to": "Inpatient Medication Entry", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Card Break", "label": "Outpatient", "link_count": 5, "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Patient Appointment", "link_to": "Patient Appointment", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Clinical Procedure", "link_to": "Clinical Procedure", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Patient Encounter", "link_to": "Patient Encounter", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Vital Signs", "link_to": "Vital Signs", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 },
+    { "type": "Link", "label": "Fee Validity", "link_to": "Fee Validity", "link_type": "DocType", "hidden": 0, "is_query_report": 0, "onboard": 0 }
+  ]
+}

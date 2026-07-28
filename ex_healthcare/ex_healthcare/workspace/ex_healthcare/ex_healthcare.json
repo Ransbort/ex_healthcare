@@ -21,42 +21,40 @@
         "label": "Pharmacy",
         "type": "Page",
         "link_to": "pharmacy-pos",
-        "color": "Green"
+        "color": "Green",
+        "icon": "money"
       },
       {
         "label": "Cashier",
         "type": "Page",
         "link_to": "cashier-portal",
-        "color": "Green"
+        "color": "Green",
+        "icon": "credit-card"
       },
       {
         "label": "Lab Portal",
         "type": "Page",
         "link_to": "lab-portal",
-        "color": "Blue"
+        "color": "Blue",
+        "icon": "activity"
       },
       {
         "label": "Rehab Portal",
         "type": "Page",
         "link_to": "rehab-portal",
-        "color": "Orange"
+        "color": "Orange",
+        "icon": "tool"
       },
       {
         "label": "Patient",
         "type": "DocType",
         "link_to": "Patient",
         "doc_view": "List",
-        "color": "Grey"
-      },
-      {
-        "label": "Patient Encounter",
-        "type": "DocType",
-        "link_to": "Patient Encounter",
-        "doc_view": "List",
-        "color": "Grey"
+        "color": "Grey",
+        "icon": "user"
       }
     ],
-    "content": "[{\"id\":\"header1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_pharmacy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pharmacy POS\",\"col\":3}},{\"id\":\"sc_lab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lab Portal\",\"col\":3}},{\"id\":\"sc_rehab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rehab Portal\",\"col\":3}},{\"id\":\"sc_patient\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient\",\"col\":3}},{\"id\":\"sc_encounter\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient Encounter\",\"col\":3}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Service Portals</b></span>\",\"col\":12}},{\"id\":\"card_pharmacy\",\"type\":\"card\",\"data\":{\"card_name\":\"Pharmacy\",\"col\":4}},{\"id\":\"card_lab\",\"type\":\"card\",\"data\":{\"card_name\":\"Lab\",\"col\":4}},{\"id\":\"card_rehab\",\"type\":\"card\",\"data\":{\"card_name\":\"Rehab\",\"col\":4}},{\"id\":\"card_patients\",\"type\":\"card\",\"data\":{\"card_name\":\"Patients\",\"col\":4}}]",
+    "content": "[{\"id\":\"header1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_pharmacy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pharmacy\",\"col\":3}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cashier\",\"col\":3}},{\"id\":\"sc_lab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lab Portal\",\"col\":3}},{\"id\":\"sc_rehab\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rehab Portal\",\"col\":3}},{\"id\":\"sc_patient\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient\",\"col\":3}},{\"id\":\"sc_encounter\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient Encounter\",\"col\":3}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Service Portals</b></span>\",\"col\":12}},{\"id\":\"card_pharmacy\",\"type\":\"card\",\"data\":{\"card_name\":\"Pharmacy\",\"col\":4}},{\"id\":\"card_lab\",\"type\":\"card\",\"data\":{\"card_name\":\"Lab\",\"col\":4}},{\"id\":\"card_rehab\",\"type\":\"card\",\"data\":{\"card_name\":\"Rehab\",\"col\":4}},{\"id\":\"card_patients\",\"type\":\"card\",\"data\":{\"card_name\":\"Patients\",\"col\":4}}]",
     "links": [
       {
         "type": "Card Break",

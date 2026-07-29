@@ -24,6 +24,22 @@ def create_walkin_patient(first_name, last_name=None, mobile=None, gender=None, 
 	return {"status": "Success", "patient": patient.name, "patient_name": patient.patient_name}
 
 
+DEFAULT_APPOINTMENT_DURATION_MINUTES = 15
+
+
+def _resolve_duration(appointment_type):
+	"""Patient Appointment validates that appointment_end_time > appointment_time,
+	which it derives from `duration` (minutes). If duration is 0/unset, end==start
+	and the doc fails validation with "Appointment end must be after start."
+	Prefer the Appointment Type's configured duration; fall back to a sane default.
+	"""
+	if appointment_type:
+		duration = frappe.db.get_value("Appointment Type", appointment_type, "default_duration")
+		if duration:
+			return duration
+	return DEFAULT_APPOINTMENT_DURATION_MINUTES
+
+
 @frappe.whitelist()
 def create_consultation(
 	patient,
@@ -39,6 +55,7 @@ def create_consultation(
 	"""
 	appointment_date = appointment_date or nowdate()
 	appointment_time = appointment_time or nowtime()
+	duration = _resolve_duration(appointment_type)
 
 	appointment = frappe.get_doc({
 		"doctype": "Patient Appointment",
@@ -48,6 +65,7 @@ def create_consultation(
 		"appointment_type": appointment_type,
 		"appointment_date": appointment_date,
 		"appointment_time": appointment_time,
+		"duration": duration,
 		"status": "Open",
 		"queue_status": "Registered",
 		"checked_in_at": now_datetime(),

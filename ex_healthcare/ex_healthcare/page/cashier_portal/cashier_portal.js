@@ -791,7 +791,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
         render_input: true
     });
 
-    let filter_date = frappe.ui.form.make_control({
+	let filter_date = frappe.ui.form.make_control({
         parent: page.main.find('[data-fieldname="filter_date"]'),
         df: {
             fieldtype: 'Date',
@@ -926,7 +926,9 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
         page.main.find('#show-summary-toggle').prop('checked', false);
         page.main.find('#payment-summary-card').hide();
         page.main.find('#payments-container').show();
-        filter_date.set_value(frappe.datetime.get_today());
+        withServerToday(function(today) {
+            filter_date.set_value(today);
+        });
         allPayments = [];
         
         // Focus on appropriate field
@@ -985,6 +987,15 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     setTimeout(() => {
         patient_field.$input.focus();
     }, 500);
+
+	function withServerToday(callback) {
+    	frappe.call({
+        	method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_server_today',
+        	callback: function(r) {
+            	if (r.message) callback(r.message);
+        	}
+    	});
+	}
 
     // Helper function to toggle invoice items
     function toggleInvoiceItems(invoiceCard, invoiceName, doctype) {
@@ -1664,7 +1675,6 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                             fieldtype: 'Date',
                             fieldname: 'reference_date',
                             label: 'Reference Date',
-                            default: frappe.datetime.get_today(),
                             hidden: 1
                         },
                         {
@@ -1723,6 +1733,9 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                 });
 
                 dialog.show();
+				withServerToday(function(today) {
+                    dialog.set_value('reference_date', today);
+                });
             }
         });
     }
@@ -1898,7 +1911,6 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     fieldtype: 'Date',
                     fieldname: 'transaction_date',
                     label: 'Transaction Date',
-                    default: frappe.datetime.get_today(),
                     reqd: 1,
                     onchange: function() {
                         // Auto-load when date changes. Use frappe.session.user
@@ -1973,8 +1985,12 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
             }
         });
 
-        // Load initial data
-        loadTransactions(frappe.session.user, frappe.datetime.get_today(), dialog);
+        // Set default date and load initial data using the server's
+        // idea of "today" rather than the browser's local clock
+        withServerToday(function(today) {
+            dialog.set_value('transaction_date', today);
+            loadTransactions(frappe.session.user, today, dialog);
+        });
 
         function loadTransactions(cashier, date, dialog) {
             frappe.call({

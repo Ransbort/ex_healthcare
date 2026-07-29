@@ -216,15 +216,32 @@ def get_pending_checkins(date=None, patient=None):
 # =============================================
 
 def _patient_and_practitioner_names(patient, practitioner):
-	"""Resolve display names explicitly rather than relying on Frappe's
-	automatic fetch-from mechanism, which isn't reliably populating
-	patient_name/practitioner_name when the Encounter is built from a
-	plain dict and inserted via the API (as opposed to being saved
-	through the desk form, where fetch-from is triggered on change)."""
-	return (
-		frappe.db.get_value("Patient", patient, "patient_name"),
-		frappe.db.get_value("Healthcare Practitioner", practitioner, "practitioner_name"),
-	)
+    """Resolve full patient and practitioner display names.
+
+    Build the patient's full name from the Patient document instead of
+    relying on patient_name, which may only contain the first name.
+    """
+
+    patient_doc = frappe.get_doc("Patient", patient)
+
+    full_name = " ".join(
+        filter(
+            None,
+            [
+                patient_doc.first_name,
+                getattr(patient_doc, "middle_name", None),
+                patient_doc.last_name,
+            ],
+        )
+    )
+
+    practitioner_name = frappe.db.get_value(
+        "Healthcare Practitioner",
+        practitioner,
+        "practitioner_name",
+    )
+
+    return full_name, practitioner_name
 
 
 @frappe.whitelist()

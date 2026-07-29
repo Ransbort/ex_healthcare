@@ -258,6 +258,13 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	ci_date.refresh();
 	ci_date.set_value(frappe.datetime.get_today());
 
+	let ci_service_unit = frappe.ui.form.make_control({
+		parent: page.main.find('[data-fieldname="ci_service_unit"]'),
+		df: { fieldtype: 'Link', fieldname: 'ci_service_unit', options: 'Healthcare Service Unit', label: 'Service Unit' },
+		render_input: true
+	});
+	ci_service_unit.refresh();
+
 	let ci_time = frappe.ui.form.make_control({
 		parent: page.main.find('[data-fieldname="ci_time"]'),
 		df: { fieldtype: 'Time', fieldname: 'ci_time', label: 'Appointment Time', default: frappe.datetime.now_time() },

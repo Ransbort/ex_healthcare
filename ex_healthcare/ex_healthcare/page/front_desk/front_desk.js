@@ -141,8 +141,11 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 						<div data-fieldname="ci_department"></div>
 					</div>
 					<div class="form-grid">
+						<div data-fieldname="ci_appointment_type"></div>
 						<div data-fieldname="ci_date"></div>
 						<div data-fieldname="ci_time"></div>
+					</div>
+					<div class="form-grid">
 						<div data-fieldname="ci_fee"></div>
 					</div>
 					<button class="btn btn-success btn-lg" id="create-consultation-btn">
@@ -267,6 +270,15 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	});
 	ci_department.refresh();
 
+	// Only required for the walk-in path — when checking in a booked
+	// appointment, its own appointment_type is inherited server-side.
+	let ci_appointment_type = frappe.ui.form.make_control({
+		parent: page.main.find('[data-fieldname="ci_appointment_type"]'),
+		df: { fieldtype: 'Link', fieldname: 'ci_appointment_type', options: 'Appointment Type', label: 'Appointment Type' },
+		render_input: true
+	});
+	ci_appointment_type.refresh();
+
 	let ci_date = frappe.ui.form.make_control({
 		parent: page.main.find('[data-fieldname="ci_date"]'),
 		df: { fieldtype: 'Date', fieldname: 'ci_date', label: 'Date', default: frappe.datetime.get_today() },
@@ -367,12 +379,18 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			frappe.show_alert({ message: __('Please select a practitioner'), indicator: 'orange' }, 5);
 			return;
 		}
+		const appointmentType = ci_appointment_type.get_value();
+		if (!appointmentType) {
+			frappe.show_alert({ message: __('Please select an appointment type'), indicator: 'orange' }, 5);
+			return;
+		}
 
 		frappe.call({
 			method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.create_walkin_encounter',
 			args: {
 				patient: patient,
 				practitioner: practitioner,
+				appointment_type: appointmentType,
 				department: ci_department.get_value(),
 				consultation_fee: ci_fee.get_value() || 0
 			},
@@ -389,6 +407,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			frappe.show_alert({ message: msg, indicator: 'green' }, 8);
 			ci_patient.set_value('');
 			ci_appointment.set_value('');
+			ci_appointment_type.set_value('');
 			np_first_name.set_value('');
 			np_last_name.set_value('');
 			np_mobile.set_value('');

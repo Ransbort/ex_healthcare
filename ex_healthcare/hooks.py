@@ -32,6 +32,18 @@ role_home_page = {
     "Cashier": "cashier-portal",
 }
 
+doc_events = {
+	# ... merge with any existing doc_events you already have ...
+	"Patient Encounter": {
+		"on_submit": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_patient_encounter_submit"
+	}
+}
+
+# Also make sure these are declared so `bench migrate` picks up the fixtures:
+fixtures = [
+	# ... merge with any existing fixtures you already have ...
+	{"doctype": "Custom Field", "filters": [["dt", "=", "Patient Appointment"]]},
+]
 
 
 # Includes in <head>

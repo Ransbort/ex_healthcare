@@ -25,6 +25,14 @@ from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice, 
 # care how the bucket was decided.
 DEPARTMENT_FIELD = "custom_department"
 
+@frappe.whitelist()
+def get_server_today():
+	"""Same rationale as front_desk.get_server_today() — the cashier's
+	browser can be in a different timezone than the site, so default
+	all date fields here to the site's own nowdate() rather than the
+	browser's local clock."""
+	return nowdate()
+
 
 @frappe.whitelist()
 def get_patient_data(patient_id):

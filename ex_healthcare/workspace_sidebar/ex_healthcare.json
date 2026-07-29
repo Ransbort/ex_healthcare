@@ -244,6 +244,18 @@
     "parentfield": "items",
     "parenttype": "Workspace Sidebar"
   },
-  {"doctype": "Workspace Sidebar Item", "idx": 19, "type": "Link", "icon": "user-plus", "label": "Front Desk", "link_to": "front-desk", "link_type": "Page", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"},
+  {
+   "doctype": "Workspace Sidebar Item", 
+   "idx": 19, 
+   "type": "Link", 
+   "icon": "user-plus", 
+   "label": "Front Desk", 
+   "link_to": "front-desk", 
+   "link_type": "Page", 
+   "child": 0, 
+   "parent": "Ex Healthcare", 
+   "parentfield": "items", 
+   "parenttype": "Workspace Sidebar"
+  }
  ]
 }

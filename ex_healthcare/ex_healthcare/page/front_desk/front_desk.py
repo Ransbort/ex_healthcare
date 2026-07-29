@@ -304,17 +304,25 @@ def create_walkin_encounter(patient, practitioner, appointment_type, department=
 
 
 def _finalize_checkin(encounter, patient, consultation_fee, item_code=None):
-	"""Shared tail end of both check-in paths: raise the paid invoice (if
-	any) and set the encounter's queue_status accordingly."""
+	"""Shared tail end of both check-in paths: raise the invoice (if any)
+	and set the encounter's queue_status accordingly.
+
+	Payment is NOT collected here anymore — the invoice is created
+	unpaid/outstanding and handed off to the Cashier Portal, which is
+	responsible for actually receiving payment. Only once the invoice
+	is fully paid (see on_sales_invoice_payment below) does the queue
+	advance to "Paid - Awaiting Vitals". If there's no fee at all,
+	there's nothing for the cashier to collect, so skip straight there.
+	"""
 
 	invoice_name = None
 
 	if float(consultation_fee or 0) > 0:
-		invoice_name = _create_paid_consultation_invoice(patient, consultation_fee, encounter.name, item_code)
+		invoice_name = _create_consultation_invoice(patient, consultation_fee, encounter.name, item_code)
 		encounter.db_set("consultation_invoice", invoice_name)
-		encounter.db_set("queue_status", "Paid - Awaiting Vitals")
-	else:
 		encounter.db_set("queue_status", "Payment Pending")
+	else:
+		encounter.db_set("queue_status", "Paid - Awaiting Vitals")
 
 	return {
 		"status": "Success",
@@ -324,34 +332,28 @@ def _finalize_checkin(encounter, patient, consultation_fee, item_code=None):
 	}
 
 
-def _default_mode_of_payment():
-	"""Resolve a Mode of Payment for the POS invoice.
+def _create_consultation_invoice(patient, amount, encounter_name, item_code=None):
+	"""Create the consultation Sales Invoice, submitted but UNPAID —
+	outstanding_amount == grand_total. The Cashier Portal is responsible
+	for actually receiving payment against this invoice (via whatever
+	mechanism cashier_portal.py already uses for Pharmacy/Lab/Rehab
+	invoices — Payment Entry, or its own accept/confirm method).
 
-	Healthcare Settings.default_mode_of_payment doesn't exist as a field
-	on every Healthcare version (it errored hard here — get_single_value
-	raises on an unknown field rather than returning None) so check the
-	doctype's own meta before ever reading it. Falls back to whatever
-	Mode of Payment record actually exists, and only then to the literal
-	"Cash" if the site has none set up at all.
-	"""
-
-	if frappe.get_meta("Healthcare Settings").has_field("default_mode_of_payment"):
-		mode = frappe.db.get_single_value("Healthcare Settings", "default_mode_of_payment")
-		if mode:
-			return mode
-
-	mode = frappe.db.get_value("Mode of Payment", {"enabled": 1}, "name", order_by="creation asc")
-	return mode or "Cash"
-
-
-def _create_paid_consultation_invoice(patient, amount, encounter_name, item_code=None):
-	"""Create paid consultation Sales Invoice.
-
-	item_code is now whatever the front desk selected on an Item with a
+	item_code is whatever the front desk selected on an Item with a
 	price set up against it (Item Price / standard_rate) — no longer
-	hardcoded, so clinics can maintain their own consultation items
-	(different fees per service, price list, etc.) instead of a single
-	fixed "Consultation" item.
+	hardcoded, so clinics can maintain their own consultation items.
+
+	custom_department = "Consultation" tags this invoice the same way
+	Pharmacy/Spa invoices are tagged (see setup.py's get_custom_fields()),
+	so it can be bucketed into its own tab on the Cashier Portal instead
+	of falling into "Other" unlabelled.
+
+	ASSUMPTION requiring follow-up: this assumes "Consultation" has been
+	added as a valid option to the custom_department Select field (see
+	the updated setup.py snippet), and that cashier_portal.py has a
+	matching tab/bucket wired up for it — that file wasn't available
+	when this was written, so the Cashier Portal side of this still
+	needs a look to confirm it actually surfaces "Consultation" invoices.
 	"""
 
 	item_code = item_code or "Consultation"
@@ -361,8 +363,6 @@ def _create_paid_consultation_invoice(patient, amount, encounter_name, item_code
 
 	default_company = frappe.defaults.get_global_default("company")
 
-	mode_of_payment = _default_mode_of_payment()
-
 	invoice = frappe.get_doc({
 		"doctype": "Sales Invoice",
 
@@ -370,7 +370,7 @@ def _create_paid_consultation_invoice(patient, amount, encounter_name, item_code
 		"patient": patient,
 		"company": default_company,
 
-		"is_pos": 1,
+		"custom_department": "Consultation",
 
 		"posting_date": nowdate(),
 		"due_date": nowdate(),
@@ -379,11 +379,6 @@ def _create_paid_consultation_invoice(patient, amount, encounter_name, item_code
 			"item_code": item_code,
 			"qty": 1,
 			"rate": float(amount),
-		}],
-
-		"payments": [{
-			"mode_of_payment": mode_of_payment,
-			"amount": float(amount),
 		}],
 
 		"remarks": f"Consultation fee for Patient Encounter {encounter_name}",
@@ -395,9 +390,29 @@ def _create_paid_consultation_invoice(patient, amount, encounter_name, item_code
 	return invoice.name
 
 
+def on_sales_invoice_payment(doc, method=None):
+	"""Doc event hook (wire up in hooks.py against Sales Invoice's
+	on_update — see updated hooks_snippet) — once a consultation invoice
+	we created gets fully paid via the Cashier Portal (outstanding_amount
+	hits 0), advance the linked encounter from Payment Pending to
+	Paid - Awaiting Vitals so it shows up in the nurse's queue.
+	"""
+
+	if doc.outstanding_amount != 0:
+		return
+
+	encounter_name = frappe.db.get_value(
+		"Patient Encounter",
+		{"consultation_invoice": doc.name, "queue_status": "Payment Pending"},
+		"name",
+	)
+	if encounter_name:
+		frappe.db.set_value("Patient Encounter", encounter_name, "queue_status", "Paid - Awaiting Vitals")
+
+
 # =============================================
-# QUEUE (now reads Patient Encounter, filtered
-# to docstatus=0 — a submitted Encounter has
+# QUEUE (reads Patient Encounter, filtered to
+# docstatus=0 — a submitted Encounter has
 # already left the front-desk queue)
 # =============================================
 

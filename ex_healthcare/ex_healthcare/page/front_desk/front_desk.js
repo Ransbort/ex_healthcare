@@ -185,6 +185,24 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	`;
 	$(html).appendTo(page.main);
 
+	// The browser's local date/timezone can disagree with the site's —
+	// encounter_date is always stamped server-side, so re-anchor to the
+	// site's actual "today" every time it matters, not just once at load.
+	function withServerToday(callback) {
+		frappe.call({
+			method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.get_server_today',
+			callback: function(r) {
+				if (r.message) callback(r.message);
+			}
+		});
+	}
+
+	withServerToday(function(serverToday) {
+		[ci_date, q_date, n_date, d_date].forEach(function(ctrl) {
+			if (ctrl) ctrl.set_value(serverToday);
+		});
+	});
+
 	// =============================================
 	// STATE
 	// =============================================
@@ -428,9 +446,9 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		$(this).addClass('active');
 		page.main.find('.tab-content').removeClass('active');
 		page.main.find(`#${tab}-tab`).addClass('active');
-		if (tab === 'queue') loadQueue();
-		if (tab === 'nurse') loadNurseQueue();
-		if (tab === 'doctor') loadDoctorQueue();
+		if (tab === 'queue') withServerToday(function(t) { q_date.set_value(t); loadQueue(); });
+		if (tab === 'nurse') withServerToday(function(t) { n_date.set_value(t); loadNurseQueue(); });
+		if (tab === 'doctor') withServerToday(function(t) { d_date.set_value(t); loadDoctorQueue(); });
 	});
 
 	// =============================================

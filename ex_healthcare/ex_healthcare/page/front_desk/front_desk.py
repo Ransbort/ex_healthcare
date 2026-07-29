@@ -316,6 +316,7 @@ def _create_consultation_invoice(patient, amount, encounter_name):
 	Pharmacy/Spa invoices are tagged (see setup.py's get_custom_fields()),
 	so it can be bucketed into its own tab on the Cashier Portal instead
 	of falling into "Other" unlabelled.
+	"""
 
 	patient_doc = frappe.get_doc("Patient", patient)
 	customer = patient_doc.customer or patient_doc.name

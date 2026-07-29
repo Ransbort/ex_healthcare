@@ -160,6 +160,9 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 					<div data-fieldname="q_date"></div>
 					<button class="btn btn-primary" id="queue-filter-btn"><i class="fa fa-filter"></i> Filter</button>
 					<button class="btn btn-default" id="queue-refresh-btn"><i class="fa fa-refresh"></i> Refresh</button>
+					<button class="btn btn-success" id="bulk-send-nurse-btn" style="display:none;">
+						<i class="fa fa-forward"></i> Send All to Nurse (<span id="bulk-send-nurse-count">0</span>)
+					</button>
 				</div>
 				<div class="queue-table-container" id="queue-table-container"></div>
 			</div>
@@ -464,8 +467,35 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	q_date.refresh();
 	q_date.set_value(frappe.datetime.get_today());
 
+let currentQueueRows = [];
+
 	page.main.find('#queue-filter-btn, #queue-refresh-btn').on('click', function() { loadQueue(); });
 
+	page.main.find('#bulk-send-nurse-btn').on('click', function() {
+		const eligible = currentQueueRows.filter(r => r.queue_status === 'Paid - Awaiting Vitals');
+		if (!eligible.length) return;
+
+		frappe.confirm(
+			__('Send all {0} patient(s) awaiting vitals to the nurse queue?', [eligible.length]),
+			function() {
+				frappe.call({
+					method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.bulk_send_to_nurse',
+					args: { encounters: eligible.map(r => r.name) },
+					freeze: true,
+					freeze_message: __('Sending to nurse...'),
+					callback: function(r) {
+						if (r.message && r.message.status === 'Success') {
+							frappe.show_alert({
+								message: __('Sent {0} patient(s) to nurse', [r.message.updated.length]),
+								indicator: 'green'
+							}, 5);
+							loadQueue();
+						}
+					}
+				});
+			}
+		);
+	});
 	function statusBadge(status) {
 		const map = {
 			'Registered': 'badge-registered',
@@ -479,11 +509,22 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		return `<span class="${map[status] || 'badge-registered'}">${status || ''}</span>`;
 	}
 
-	function loadQueue() {
+function loadQueue() {
 		frappe.call({
 			method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.get_queue',
 			args: { date: q_date.get_value() },
-			callback: function(r) { renderQueueTable(r.message || []); }
+			callback: function(r) {
+				currentQueueRows = r.message || [];
+				renderQueueTable(currentQueueRows);
+
+				const eligibleCount = currentQueueRows.filter(row => row.queue_status === 'Paid - Awaiting Vitals').length;
+				if (eligibleCount > 0) {
+					page.main.find('#bulk-send-nurse-count').text(eligibleCount);
+					page.main.find('#bulk-send-nurse-btn').show();
+				} else {
+					page.main.find('#bulk-send-nurse-btn').hide();
+				}
+			}
 		});
 	}
 

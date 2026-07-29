@@ -427,7 +427,7 @@ def get_queue(date=None, queue_status=None):
 	if queue_status:
 		filters["queue_status"] = queue_status
 
-rows = frappe.get_all(
+	rows = frappe.get_all(
 		"Patient Encounter",
 
 		filters=filters,

@@ -146,7 +146,6 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 						<div data-fieldname="ci_time"></div>
 					</div>
 					<div class="form-grid">
-						<div data-fieldname="ci_item"></div>
 						<div data-fieldname="ci_fee"></div>
 					</div>
 					<button class="btn btn-success btn-lg" id="create-consultation-btn">
@@ -313,30 +312,6 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	});
 	ci_time.refresh();
 
-	let ci_item = frappe.ui.form.make_control({
-		parent: page.main.find('[data-fieldname="ci_item"]'),
-		df: {
-			fieldtype: 'Link', fieldname: 'ci_item', options: 'Item',
-			label: 'Consultation Item',
-			get_query: function() {
-				return { filters: { disabled: 0 } };
-			},
-			onchange: function() {
-				const item = ci_item.get_value();
-				if (!item) return;
-				frappe.call({
-					method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.get_item_rate',
-					args: { item_code: item },
-					callback: function(r) {
-						ci_fee.set_value(r.message || 0);
-					}
-				});
-			}
-		},
-		render_input: true
-	});
-	ci_item.refresh();
-
 	let ci_fee = frappe.ui.form.make_control({
 		parent: page.main.find('[data-fieldname="ci_fee"]'),
 		df: { fieldtype: 'Currency', fieldname: 'ci_fee', label: 'Consultation Fee', default: 0 },
@@ -403,7 +378,6 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 				args: {
 					appointment: appointment,
 					consultation_fee: ci_fee.get_value() || 0,
-					item_code: ci_item.get_value()
 				},
 				freeze: true,
 				freeze_message: __('Checking in...'),

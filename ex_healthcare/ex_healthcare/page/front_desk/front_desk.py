@@ -16,6 +16,34 @@ def get_server_today():
 	server-side nowdate()."""
 	return nowdate()
 
+@frappe.whitelist()
+def bulk_send_to_nurse(encounters):
+	"""Send every currently 'Paid - Awaiting Vitals' encounter in the
+	given list to the nurse queue in one action. Re-checks queue_status
+	server-side rather than trusting the front-end's snapshot, in case
+	something changed between page load and this click."""
+	import json
+	if isinstance(encounters, str):
+		encounters = json.loads(encounters)
+
+	if not encounters:
+		return {"status": "Success", "updated": []}
+
+	eligible = frappe.get_all(
+		"Patient Encounter",
+		filters={
+			"name": ["in", encounters],
+			"queue_status": "Paid - Awaiting Vitals",
+			"docstatus": 0,
+		},
+		pluck="name",
+	)
+
+	for name in eligible:
+		frappe.db.set_value("Patient Encounter", name, "queue_status", "With Nurse")
+
+	return {"status": "Success", "updated": eligible}
+
 
 @frappe.whitelist()
 def create_walkin_patient(first_name, last_name=None, mobile=None, gender=None, dob=None):

@@ -199,4 +199,118 @@ def get_custom_fields():
 				"hidden": 0,
 			},
 		],
+		# Front Desk: drives the walk-in patient journey (receptionist ->
+		# nurse -> doctor). front_desk.py's create_consultation()/
+		# get_queue()/send_to_nurse()/save_vitals()/start_consultation() all
+		# read/write these fields directly - without them, get_queue()
+		# throws "Unknown column 'queue_status'" (as seen when this was
+		# tried as a standalone fixture instead of going through
+		# make_custom_fields()).
+		"Patient Appointment": [
+			{
+				"fieldname": "queue_status",
+				"label": "Queue Status",
+				"fieldtype": "Select",
+				"insert_after": "status",
+				"options": "Registered\nPayment Pending\nPaid - Awaiting Vitals\nWith Nurse\nWith Doctor\nIn Consultation\nCompleted\nCancelled",
+				"default": "Registered",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "front_desk_section",
+				"label": "Front Desk / Nurse Station",
+				"fieldtype": "Section Break",
+				"insert_after": "queue_status",
+				"collapsible": 1,
+			},
+			{
+				"fieldname": "consultation_invoice",
+				"label": "Consultation Invoice",
+				"fieldtype": "Link",
+				"insert_after": "front_desk_section",
+				"options": "Sales Invoice",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "checked_in_at",
+				"label": "Checked In At",
+				"fieldtype": "Datetime",
+				"insert_after": "consultation_invoice",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "vitals_column_break",
+				"label": "",
+				"fieldtype": "Column Break",
+				"insert_after": "checked_in_at",
+			},
+			{
+				"fieldname": "vitals_temperature",
+				"label": "Temperature (\u00b0C)",
+				"fieldtype": "Float",
+				"insert_after": "vitals_column_break",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "vitals_blood_pressure",
+				"label": "Blood Pressure",
+				"fieldtype": "Data",
+				"insert_after": "vitals_temperature",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "vitals_pulse",
+				"label": "Pulse (bpm)",
+				"fieldtype": "Int",
+				"insert_after": "vitals_blood_pressure",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "vitals_weight",
+				"label": "Weight (kg)",
+				"fieldtype": "Float",
+				"insert_after": "vitals_pulse",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "vitals_height",
+				"label": "Height (cm)",
+				"fieldtype": "Float",
+				"insert_after": "vitals_weight",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "vitals_notes",
+				"label": "Nurse Notes",
+				"fieldtype": "Small Text",
+				"insert_after": "vitals_height",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "vitals_recorded_by",
+				"label": "Vitals Recorded By",
+				"fieldtype": "Link",
+				"insert_after": "vitals_notes",
+				"options": "User",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "vitals_recorded_on",
+				"label": "Vitals Recorded On",
+				"fieldtype": "Datetime",
+				"insert_after": "vitals_recorded_by",
+				"reqd": 0,
+				"hidden": 0,
+			},
+		],
 	}

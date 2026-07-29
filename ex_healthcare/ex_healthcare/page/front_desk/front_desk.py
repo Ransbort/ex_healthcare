@@ -427,7 +427,7 @@ def get_queue(date=None, queue_status=None):
 	if queue_status:
 		filters["queue_status"] = queue_status
 
-	rows = frappe.get_all(
+rows = frappe.get_all(
 		"Patient Encounter",
 
 		filters=filters,
@@ -462,6 +462,26 @@ def get_queue(date=None, queue_status=None):
 
 		order_by="encounter_time asc",
 	)
+
+	# patient_name stored on the Encounter can be stale/incomplete (e.g.
+	# just a first name) depending on what was on the Patient record at
+	# check-in time. Always resolve the full display name fresh from
+	# the Patient doctype (first_name + last_name) rather than trusting
+	# whatever got cached on the Encounter.
+	patient_ids = list({row["patient"] for row in rows if row.get("patient")})
+	if patient_ids:
+		patients = frappe.get_all(
+			"Patient",
+			filters={"name": ["in", patient_ids]},
+			fields=["name", "first_name", "last_name"],
+		)
+		full_name_map = {
+			p["name"]: " ".join(filter(None, [p.get("first_name"), p.get("last_name")]))
+			for p in patients
+		}
+		for row in rows:
+			if row.get("patient") in full_name_map:
+				row["patient_name"] = full_name_map[row["patient"]] or row["patient_name"]
 
 	return rows
 

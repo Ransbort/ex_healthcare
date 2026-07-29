@@ -48,9 +48,10 @@ doc_events = {
 	"Patient Encounter": {
 		"on_submit": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_patient_encounter_submit"
 	},
-	"Sales Invoice": {
-		"on_update": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_sales_invoice_payment"
-	}
+	"Payment Entry": {
+        "on_submit": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_payment_entry_submit"
+    },
+    # remove/replace the old Sales Invoice on_update entry if present
 }
 
 

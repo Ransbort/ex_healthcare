@@ -32,10 +32,24 @@ role_home_page = {
     "Cashier": "cashier-portal",
 }
 
+# Front Desk: once the doctor submits the Patient Encounter, automatically
+# close out the corresponding Patient Appointment's queue_status to
+# "Completed" (see page/front_desk/front_desk.py::on_patient_encounter_submit).
+#
+# NOTE: Patient Appointment's queue_status/vitals_* custom fields themselves
+# are NOT declared here as a `fixtures` block - they live in
+# setup.py's get_custom_fields() instead, alongside every other custom field
+# this app defines (custom_department, custom_invoice, etc.), and get
+# (re-)applied on every `bench migrate` via the after_migrate hook below.
+# Keeping two separate systems (fixtures + make_custom_fields) managing the
+# same fields caused drift/confusion, so this app uses make_custom_fields()
+# exclusively.
 doc_events = {
-	# ... merge with any existing doc_events you already have ...
 	"Patient Encounter": {
 		"on_submit": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_patient_encounter_submit"
+	},
+	"Sales Invoice": {
+		"on_update": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_sales_invoice_payment"
 	}
 }
 

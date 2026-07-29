@@ -39,6 +39,21 @@ def _resolve_duration(appointment_type):
 			return duration
 	return DEFAULT_APPOINTMENT_DURATION_MINUTES
 
+def _resolve_service_unit(appointment_type, service_unit=None):
+	"""Appointment Types with Allow Booking For = 'Service Unit' require
+	Patient Appointment.service_unit to be set, or insert() fails with
+	frappe.throw("Please enter Service Unit"). Pass service_unit through
+	when the front desk supplied one; otherwise fail with a clear,
+	actionable message instead of the healthcare app's generic one.
+	"""
+	if service_unit:
+		return service_unit
+	if not appointment_type:
+		return None
+	allow_booking_for = frappe.db.get_value("Appointment Type", appointment_type, "allow_booking_for")
+	if allow_booking_for == "Service Unit":
+		frappe.throw(_("Appointment Type {0} requires a Service Unit. Please select one before creating the appointment.").format(appointment_type))
+	return None
 
 @frappe.whitelist()
 def create_consultation(
@@ -49,6 +64,7 @@ def create_consultation(
 	consultation_fee=0,
 	appointment_date=None,
 	appointment_time=None,
+	service_unit=None,
 ):
 	"""Create the consultation Patient Appointment + a paid-on-the-spot
 	consultation invoice, then park the patient in the queue awaiting the nurse.
@@ -56,6 +72,7 @@ def create_consultation(
 	appointment_date = appointment_date or nowdate()
 	appointment_time = appointment_time or nowtime()
 	duration = _resolve_duration(appointment_type)
+	service_unit = _resolve_service_unit(appointment_type, service_unit)
 
 	appointment = frappe.get_doc({
 		"doctype": "Patient Appointment",
@@ -63,6 +80,7 @@ def create_consultation(
 		"practitioner": practitioner,
 		"department": department,
 		"appointment_type": appointment_type,
+		"service_unit": service_unit,
 		"appointment_date": appointment_date,
 		"appointment_time": appointment_time,
 		"duration": duration,

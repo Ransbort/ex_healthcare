@@ -476,7 +476,10 @@ rows = frappe.get_all(
 			fields=["name", "first_name", "last_name"],
 		)
 		full_name_map = {
-			p["name"]: " ".join(filter(None, [p.get("first_name"), p.get("last_name")]))
+			p["name"]: " ".join(filter(None, [
+				(p.get("first_name") or "").strip(),
+				(p.get("last_name") or "").strip(),
+			]))
 			for p in patients
 		}
 		for row in rows:

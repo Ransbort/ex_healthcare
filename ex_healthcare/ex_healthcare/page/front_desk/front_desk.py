@@ -4,7 +4,7 @@ from frappe.utils import now_datetime, nowdate, nowtime, add_to_date
 
 
 # =============================================
-# PATIENT REGISTRATION
+# GET SERVER TODAY
 # =============================================
 
 @frappe.whitelist()
@@ -15,6 +15,21 @@ def get_server_today():
 	timezone than the site, since encounter_date is always stamped with
 	server-side nowdate()."""
 	return nowdate()
+
+# =============================================
+# NOTIFICATION HELPER
+# =============================================
+
+def _notify(event, payload):
+	"""Broadcast a realtime event to everyone listening in this site.
+	Used to trigger department-specific sound/toast notifications on
+	the front-end the instant a queue status changes, without needing
+	to poll."""
+	frappe.publish_realtime(event=event, message=payload)
+
+# =============================================
+# BULK SEND TO NURSE
+# =============================================
 
 @frappe.whitelist()
 def bulk_send_to_nurse(encounters):
@@ -39,11 +54,21 @@ def bulk_send_to_nurse(encounters):
 		pluck="name",
 	)
 
-	for name in eligible:
+for name in eligible:
 		frappe.db.set_value("Patient Encounter", name, "queue_status", "With Nurse")
+
+	if eligible:
+		_notify("queue_update", {
+			"department": "nurse",
+			"message": f"{len(eligible)} patient(s) sent to nurse station",
+			"encounter": None,
+		})
 
 	return {"status": "Success", "updated": eligible}
 
+# =============================================
+# PATIENT REGISTRATION
+# =============================================
 
 @frappe.whitelist()
 def create_walkin_patient(first_name, last_name=None, mobile=None, gender=None, dob=None):
@@ -305,16 +330,6 @@ def create_walkin_encounter(patient, practitioner, appointment_type, department=
 
 
 def _finalize_checkin(encounter, patient, consultation_fee):
-	"""Shared tail end of both check-in paths: raise the invoice (if any)
-	and set the encounter's queue_status accordingly.
-
-	Payment is NOT collected here anymore — the invoice is created
-	unpaid/outstanding and handed off to the Cashier Portal, which is
-	responsible for actually receiving payment. Only once the invoice
-	is fully paid (see on_sales_invoice_payment below) does the queue
-	advance to "Paid - Awaiting Vitals". If there's no fee at all,
-	there's nothing for the cashier to collect, so skip straight there.
-	"""
 
 	invoice_name = None
 
@@ -322,6 +337,11 @@ def _finalize_checkin(encounter, patient, consultation_fee):
 		invoice_name = _create_consultation_invoice(patient, consultation_fee, encounter.name)
 		encounter.db_set("consultation_invoice", invoice_name)
 		encounter.db_set("queue_status", "Payment Pending")
+		_notify("queue_update", {
+			"department": "cashier",
+			"message": f"New invoice pending: {invoice_name}",
+			"encounter": encounter.name,
+		})
 	else:
 		encounter.db_set("queue_status", "Paid - Awaiting Vitals")
 
@@ -407,6 +427,12 @@ def on_payment_entry_submit(doc, method=None):
 		)
 		if encounter_name:
 			frappe.db.set_value("Patient Encounter", encounter_name, "queue_status", "Paid - Awaiting Vitals")
+			patient_name = frappe.db.get_value("Patient Encounter", encounter_name, "patient_name")
+			_notify("queue_update", {
+				"department": "nurse",
+				"message": f"{patient_name} paid — ready for vitals",
+				"encounter": encounter_name,
+			})
 
 # =============================================
 # QUEUE (reads Patient Encounter, filtered to
@@ -503,9 +529,13 @@ def get_queue(date=None, queue_status=None):
 
 @frappe.whitelist()
 def send_to_nurse(encounter):
-
 	frappe.db.set_value("Patient Encounter", encounter, "queue_status", "With Nurse")
-
+	patient_name = frappe.db.get_value("Patient Encounter", encounter, "patient_name")
+	_notify("queue_update", {
+		"department": "nurse",
+		"message": f"{patient_name} sent to nurse station",
+		"encounter": encounter,
+	})
 	return {"status": "Success"}
 
 
@@ -534,8 +564,15 @@ def save_vitals(
 		"queue_status": "With Doctor",
 	}
 
-	for field, value in doc_updates.items():
+for field, value in doc_updates.items():
 		frappe.db.set_value("Patient Encounter", encounter, field, value)
+
+	patient_name = frappe.db.get_value("Patient Encounter", encounter, "patient_name")
+	_notify("queue_update", {
+		"department": "doctor",
+		"message": f"{patient_name} ready for consultation",
+		"encounter": encounter,
+	})
 
 	return {"status": "Success"}
 

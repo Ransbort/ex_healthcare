@@ -27,6 +27,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			.fd-section {
 				background: white; border: 1px solid #d1d8dd; border-radius: 12px;
 				padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;
+				overflow: visible; position: relative;
 			}
 			.fd-section h5 { font-weight: 600; margin-bottom: 15px; color: #495057; }
 
@@ -41,10 +42,14 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			.toggle-btn:hover { background: #e9ecef; }
 			.toggle-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
 
-			.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-			.form-grid .frappe-control, .form-grid .form-group { margin-bottom: 0; }
-			.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-			.form-grid-2 .frappe-control, .form-grid-2 .form-group { margin-bottom: 0; }
+			.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; overflow: visible; }
+			.form-grid .frappe-control, .form-grid .form-group { margin-bottom: 0; overflow: visible; position: relative; }
+			.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; overflow: visible; }
+			.form-grid-2 .frappe-control, .form-grid-2 .form-group { margin-bottom: 0; overflow: visible; position: relative; }
+
+			/* Autocomplete dropdowns (Link fields) must render above sibling grid cells */
+			.form-grid .awesomplete, .form-grid-2 .awesomplete { position: relative; z-index: 100; }
+			.form-grid .awesomplete > ul, .form-grid-2 .awesomplete > ul { z-index: 999 !important; }
 
 			.filter-bar {
 				display: flex; gap: 15px; margin-bottom: 20px; padding: 15px;

@@ -18,33 +18,6 @@ def get_server_today():
 
 
 @frappe.whitelist()
-def get_item_rate(item_code):
-	"""Rate for a selected consultation Item — checked into the Item
-	Price list (against the default selling price list) first, falling
-	back to the Item's own standard_rate if no price list entry exists.
-	Lets clinics manage consultation fees the normal Frappe way (create
-	an Item, set its price) instead of typing a fee in free-hand."""
-
-	if not item_code:
-		return 0
-
-	price_list = frappe.db.get_single_value("Selling Settings", "selling_price_list")
-
-	rate = None
-	if price_list:
-		rate = frappe.db.get_value(
-			"Item Price",
-			{"item_code": item_code, "price_list": price_list, "selling": 1},
-			"price_list_rate",
-		)
-
-	if not rate:
-		rate = frappe.db.get_value("Item", item_code, "standard_rate")
-
-	return rate or 0
-
-
-@frappe.whitelist()
 def create_walkin_patient(first_name, last_name=None, mobile=None, gender=None, dob=None):
 	"""Register a brand-new walk-in patient."""
 
@@ -228,7 +201,7 @@ def _patient_and_practitioner_names(patient, practitioner):
 
 
 @frappe.whitelist()
-def check_in_appointment(appointment, consultation_fee=0, item_code=None):
+def check_in_appointment(appointment, consultation_fee=0):
 	"""Patient with a booked appointment has physically arrived.
 
 	Creates the draft Patient Encounter (docstatus=0) that now owns
@@ -271,11 +244,11 @@ def check_in_appointment(appointment, consultation_fee=0, item_code=None):
 	})
 	encounter.insert(ignore_permissions=True)
 
-	return _finalize_checkin(encounter, appt.patient, consultation_fee, item_code)
+	return _finalize_checkin(encounter, appt.patient, consultation_fee)
 
 
 @frappe.whitelist()
-def create_walkin_encounter(patient, practitioner, appointment_type, department=None, consultation_fee=0, item_code=None):
+def create_walkin_encounter(patient, practitioner, appointment_type, department=None, consultation_fee=0):
 	"""Walk-in patient with no prior booking. Skips Patient Appointment
 	entirely and creates the draft Patient Encounter directly.
 
@@ -300,10 +273,10 @@ def create_walkin_encounter(patient, practitioner, appointment_type, department=
 	})
 	encounter.insert(ignore_permissions=True)
 
-	return _finalize_checkin(encounter, patient, consultation_fee, item_code)
+	return _finalize_checkin(encounter, patient, consultation_fee)
 
 
-def _finalize_checkin(encounter, patient, consultation_fee, item_code=None):
+def _finalize_checkin(encounter, patient, consultation_fee):
 	"""Shared tail end of both check-in paths: raise the invoice (if any)
 	and set the encounter's queue_status accordingly.
 
@@ -318,7 +291,7 @@ def _finalize_checkin(encounter, patient, consultation_fee, item_code=None):
 	invoice_name = None
 
 	if float(consultation_fee or 0) > 0:
-		invoice_name = _create_consultation_invoice(patient, consultation_fee, encounter.name, item_code)
+		invoice_name = _create_consultation_invoice(patient, consultation_fee, encounter.name)
 		encounter.db_set("consultation_invoice", invoice_name)
 		encounter.db_set("queue_status", "Payment Pending")
 	else:
@@ -332,31 +305,17 @@ def _finalize_checkin(encounter, patient, consultation_fee, item_code=None):
 	}
 
 
-def _create_consultation_invoice(patient, amount, encounter_name, item_code=None):
+def _create_consultation_invoice(patient, amount, encounter_name):
 	"""Create the consultation Sales Invoice, submitted but UNPAID —
 	outstanding_amount == grand_total. The Cashier Portal is responsible
 	for actually receiving payment against this invoice (via whatever
 	mechanism cashier_portal.py already uses for Pharmacy/Lab/Rehab
 	invoices — Payment Entry, or its own accept/confirm method).
 
-	item_code is whatever the front desk selected on an Item with a
-	price set up against it (Item Price / standard_rate) — no longer
-	hardcoded, so clinics can maintain their own consultation items.
-
 	custom_department = "Consultation" tags this invoice the same way
 	Pharmacy/Spa invoices are tagged (see setup.py's get_custom_fields()),
 	so it can be bucketed into its own tab on the Cashier Portal instead
 	of falling into "Other" unlabelled.
-
-	ASSUMPTION requiring follow-up: this assumes "Consultation" has been
-	added as a valid option to the custom_department Select field (see
-	the updated setup.py snippet), and that cashier_portal.py has a
-	matching tab/bucket wired up for it — that file wasn't available
-	when this was written, so the Cashier Portal side of this still
-	needs a look to confirm it actually surfaces "Consultation" invoices.
-	"""
-
-	item_code = item_code or "Consultation"
 
 	patient_doc = frappe.get_doc("Patient", patient)
 	customer = patient_doc.customer or patient_doc.name
@@ -376,7 +335,7 @@ def _create_consultation_invoice(patient, amount, encounter_name, item_code=None
 		"due_date": nowdate(),
 
 		"items": [{
-			"item_code": item_code,
+			"item_code": "Consultation",
 			"qty": 1,
 			"rate": float(amount),
 		}],

@@ -206,6 +206,10 @@ def check_in_appointment(appointment, consultation_fee=0):
 		"patient": appt.patient,
 		"practitioner": appt.practitioner,
 		"medical_department": appt.department,
+		# Patient Encounter has appointment_type as a mandatory field of
+		# its own — inherit it from the booking rather than asking the
+		# front-desk user to re-enter something already captured.
+		"appointment_type": appt.appointment_type,
 		"appointment": appt.name,
 		"encounter_date": nowdate(),
 		"encounter_time": nowtime(),
@@ -218,15 +222,20 @@ def check_in_appointment(appointment, consultation_fee=0):
 
 
 @frappe.whitelist()
-def create_walkin_encounter(patient, practitioner, department=None, consultation_fee=0):
+def create_walkin_encounter(patient, practitioner, appointment_type, department=None, consultation_fee=0):
 	"""Walk-in patient with no prior booking. Skips Patient Appointment
-	entirely and creates the draft Patient Encounter directly."""
+	entirely and creates the draft Patient Encounter directly.
+
+	appointment_type is required because Patient Encounter itself has it
+	as a mandatory field with no Patient Appointment to inherit it from.
+	"""
 
 	encounter = frappe.get_doc({
 		"doctype": "Patient Encounter",
 		"patient": patient,
 		"practitioner": practitioner,
 		"medical_department": department,
+		"appointment_type": appointment_type,
 		"encounter_date": nowdate(),
 		"encounter_time": nowtime(),
 		"queue_status": "Registered",

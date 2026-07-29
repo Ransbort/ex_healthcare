@@ -18,6 +18,33 @@ def get_server_today():
 
 
 @frappe.whitelist()
+def get_item_rate(item_code):
+	"""Rate for a selected consultation Item — checked into the Item
+	Price list (against the default selling price list) first, falling
+	back to the Item's own standard_rate if no price list entry exists.
+	Lets clinics manage consultation fees the normal Frappe way (create
+	an Item, set its price) instead of typing a fee in free-hand."""
+
+	if not item_code:
+		return 0
+
+	price_list = frappe.db.get_single_value("Selling Settings", "selling_price_list")
+
+	rate = None
+	if price_list:
+		rate = frappe.db.get_value(
+			"Item Price",
+			{"item_code": item_code, "price_list": price_list, "selling": 1},
+			"price_list_rate",
+		)
+
+	if not rate:
+		rate = frappe.db.get_value("Item", item_code, "standard_rate")
+
+	return rate or 0
+
+
+@frappe.whitelist()
 def create_walkin_patient(first_name, last_name=None, mobile=None, gender=None, dob=None):
 	"""Register a brand-new walk-in patient."""
 
@@ -201,7 +228,7 @@ def _patient_and_practitioner_names(patient, practitioner):
 
 
 @frappe.whitelist()
-def check_in_appointment(appointment, consultation_fee=0):
+def check_in_appointment(appointment, consultation_fee=0, item_code=None):
 	"""Patient with a booked appointment has physically arrived.
 
 	Creates the draft Patient Encounter (docstatus=0) that now owns
@@ -244,11 +271,11 @@ def check_in_appointment(appointment, consultation_fee=0):
 	})
 	encounter.insert(ignore_permissions=True)
 
-	return _finalize_checkin(encounter, appt.patient, consultation_fee)
+	return _finalize_checkin(encounter, appt.patient, consultation_fee, item_code)
 
 
 @frappe.whitelist()
-def create_walkin_encounter(patient, practitioner, appointment_type, department=None, consultation_fee=0):
+def create_walkin_encounter(patient, practitioner, appointment_type, department=None, consultation_fee=0, item_code=None):
 	"""Walk-in patient with no prior booking. Skips Patient Appointment
 	entirely and creates the draft Patient Encounter directly.
 
@@ -273,17 +300,17 @@ def create_walkin_encounter(patient, practitioner, appointment_type, department=
 	})
 	encounter.insert(ignore_permissions=True)
 
-	return _finalize_checkin(encounter, patient, consultation_fee)
+	return _finalize_checkin(encounter, patient, consultation_fee, item_code)
 
 
-def _finalize_checkin(encounter, patient, consultation_fee):
+def _finalize_checkin(encounter, patient, consultation_fee, item_code=None):
 	"""Shared tail end of both check-in paths: raise the paid invoice (if
 	any) and set the encounter's queue_status accordingly."""
 
 	invoice_name = None
 
 	if float(consultation_fee or 0) > 0:
-		invoice_name = _create_paid_consultation_invoice(patient, consultation_fee, encounter.name)
+		invoice_name = _create_paid_consultation_invoice(patient, consultation_fee, encounter.name, item_code)
 		encounter.db_set("consultation_invoice", invoice_name)
 		encounter.db_set("queue_status", "Paid - Awaiting Vitals")
 	else:
@@ -297,20 +324,44 @@ def _finalize_checkin(encounter, patient, consultation_fee):
 	}
 
 
-def _create_paid_consultation_invoice(patient, amount, encounter_name):
-	"""Create paid consultation Sales Invoice."""
+def _default_mode_of_payment():
+	"""Resolve a Mode of Payment for the POS invoice.
 
-	CONSULTATION_ITEM_CODE = "Consultation"
+	Healthcare Settings.default_mode_of_payment doesn't exist as a field
+	on every Healthcare version (it errored hard here — get_single_value
+	raises on an unknown field rather than returning None) so check the
+	doctype's own meta before ever reading it. Falls back to whatever
+	Mode of Payment record actually exists, and only then to the literal
+	"Cash" if the site has none set up at all.
+	"""
+
+	if frappe.get_meta("Healthcare Settings").has_field("default_mode_of_payment"):
+		mode = frappe.db.get_single_value("Healthcare Settings", "default_mode_of_payment")
+		if mode:
+			return mode
+
+	mode = frappe.db.get_value("Mode of Payment", {"enabled": 1}, "name", order_by="creation asc")
+	return mode or "Cash"
+
+
+def _create_paid_consultation_invoice(patient, amount, encounter_name, item_code=None):
+	"""Create paid consultation Sales Invoice.
+
+	item_code is now whatever the front desk selected on an Item with a
+	price set up against it (Item Price / standard_rate) — no longer
+	hardcoded, so clinics can maintain their own consultation items
+	(different fees per service, price list, etc.) instead of a single
+	fixed "Consultation" item.
+	"""
+
+	item_code = item_code or "Consultation"
 
 	patient_doc = frappe.get_doc("Patient", patient)
 	customer = patient_doc.customer or patient_doc.name
 
 	default_company = frappe.defaults.get_global_default("company")
 
-	mode_of_payment = (
-		frappe.db.get_single_value("Healthcare Settings", "default_mode_of_payment")
-		or "Cash"
-	)
+	mode_of_payment = _default_mode_of_payment()
 
 	invoice = frappe.get_doc({
 		"doctype": "Sales Invoice",
@@ -325,7 +376,7 @@ def _create_paid_consultation_invoice(patient, amount, encounter_name):
 		"due_date": nowdate(),
 
 		"items": [{
-			"item_code": CONSULTATION_ITEM_CODE,
+			"item_code": item_code,
 			"qty": 1,
 			"rate": float(amount),
 		}],

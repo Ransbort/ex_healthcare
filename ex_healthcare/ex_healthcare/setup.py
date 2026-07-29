@@ -118,7 +118,7 @@ def get_custom_fields():
 				"label": "Department",
 				"fieldtype": "Select",
 				"insert_after": "custom_invoice_from",
-				"options": "\nPharmacy\nLaboratory\nRehabilitation\nOther",
+				"options": "\nPharmacy\nLaboratory\nRehabilitation\nConsultation\nOther",
 				"reqd": 0,
 				"hidden": 0,
 			},
@@ -199,29 +199,19 @@ def get_custom_fields():
 				"hidden": 0,
 			},
 		],
-		# Front Desk: drives the walk-in / check-in patient journey
-		# (receptionist -> nurse -> doctor).
-		#
-		# IMPORTANT: as of the check-in redesign, the queue lives on
-		# Patient Encounter, NOT Patient Appointment. Patient Appointment
-		# is now purely a schedule record (created by create_consultation()
-		# with no queue/invoice state at all). The moment a patient
-		# physically arrives - whether they had a booked appointment
-		# (check_in_appointment()) or are a walk-in with no prior booking
-		# (create_walkin_encounter()) - a draft Patient Encounter
-		# (docstatus=0) is created and THAT document carries queue_status,
-		# checked_in_at, vitals_*, and consultation_invoice from then on.
-		# get_queue()/send_to_nurse()/save_vitals()/start_consultation() in
-		# front_desk.py all read/write these fields on Patient Encounter.
-		# When the doctor submits the Encounter, on_patient_encounter_submit()
-		# sets queue_status to "Completed" directly on that same doc -
-		# there is no longer a Patient Appointment lookup involved.
-		"Patient Encounter": [
+		# Front Desk: drives the walk-in patient journey (receptionist ->
+		# nurse -> doctor). front_desk.py's create_consultation()/
+		# get_queue()/send_to_nurse()/save_vitals()/start_consultation() all
+		# read/write these fields directly - without them, get_queue()
+		# throws "Unknown column 'queue_status'" (as seen when this was
+		# tried as a standalone fixture instead of going through
+		# make_custom_fields()).
+		"Patient Appointment": [
 			{
 				"fieldname": "queue_status",
 				"label": "Queue Status",
 				"fieldtype": "Select",
-				"insert_after": "appointment",
+				"insert_after": "status",
 				"options": "Registered\nPayment Pending\nPaid - Awaiting Vitals\nWith Nurse\nWith Doctor\nIn Consultation\nCompleted\nCancelled",
 				"default": "Registered",
 				"reqd": 0,

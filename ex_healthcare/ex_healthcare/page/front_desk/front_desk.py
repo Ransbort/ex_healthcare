@@ -475,12 +475,19 @@ def get_queue(date=None, queue_status=None):
 			filters={"name": ["in", patient_ids]},
 			fields=["name", "first_name", "last_name"],
 		)
-		full_name_map = {
-			p["name"]: " ".join(filter(None, [
-				(p.get("first_name") or "").strip(),
-				(p.get("last_name") or "").strip(),
-			]))
-			for p in patients
+		def _resolve_full_name(p):
+			first = (p.get("first_name") or "").strip()
+			last = (p.get("last_name") or "").strip()
+			if last:
+				return f"{first} {last}".strip()
+			# last_name was never filled in at registration (the whole
+			# name was typed into First Name instead) - the Patient ID
+			# itself is built from what was typed, so it's the only
+			# place the full name actually survived. Fall back to it,
+			# collapsing any accidental double spaces from that.
+			return " ".join(p["name"].split()) or first
+
+		full_name_map = {p["name"]: _resolve_full_name(p) for p in patients}
 		}
 		for row in rows:
 			if row.get("patient") in full_name_map:

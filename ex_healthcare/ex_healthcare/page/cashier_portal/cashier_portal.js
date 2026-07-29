@@ -5,6 +5,38 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
         single_column: true
     });
 
+	// =============================================
+    // REALTIME SOUND NOTIFICATIONS
+    // =============================================
+    const notificationSound = new Audio('/assets/ex_healthcare/sounds/notify.mp3');
+
+    function playNotification() {
+        try {
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(() => {});
+        } catch (e) {}
+    }
+
+    frappe.realtime.on('queue_update', function(data) {
+        playNotification();
+        frappe.show_alert({
+            message: data.message,
+            indicator: 'blue'
+        }, 6);
+
+        // If a patient/customer is currently loaded and this update
+        // concerns the cashier's own workflow, refresh their view
+        if (data.department === 'cashier' && page.main.find('.details-section').is(':visible')) {
+            if (currentSearchType === 'Patient') {
+                const patient_id = patient_field.get_value();
+                if (patient_id) loadPatientData(patient_id, page);
+            } else {
+                const customer_id = customer_field.get_value();
+                if (customer_id) loadCustomerData(customer_id, page);
+            }
+        }
+    });
+
     // Add custom CSS
     const style = `
         <style>

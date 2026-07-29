@@ -5,6 +5,40 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		single_column: true
 	});
 
+	// Simple short "ping" tone, base64-encoded so no separate file/upload
+	// is needed. Swap this data URI for your own .mp3/.wav asset later
+	// if you want a custom sound per department.
+	const notificationSound = new Audio(
+		"/assets/ex_healthcare/sounds/notify.mp3"
+	);
+
+	function playNotification() {
+		try {
+			notificationSound.currentTime = 0;
+			notificationSound.play().catch(() => {});
+		} catch (e) {}
+	}
+
+	frappe.realtime.on('queue_update', function(data) {
+		playNotification();
+		frappe.show_alert({
+			message: data.message,
+			indicator: 'blue'
+		}, 6);
+
+		// Auto-refresh whichever tab is relevant and currently active,
+		// so counts/rows update immediately without a manual refresh
+		if (data.department === 'nurse' && page.main.find('#nurse-tab').hasClass('active')) {
+			loadNurseQueue();
+		}
+		if (data.department === 'doctor' && page.main.find('#doctor-tab').hasClass('active')) {
+			loadDoctorQueue();
+		}
+		if (page.main.find('#queue-tab').hasClass('active')) {
+			loadQueue();
+		}
+	});
+
 	const style = `
 		<style>
 			.fd-wrapper { padding: 20px; max-width: 1400px; margin: 0 auto; }

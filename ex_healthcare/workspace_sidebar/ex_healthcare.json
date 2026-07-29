@@ -243,6 +243,7 @@
     "parent": "Ex Healthcare",
     "parentfield": "items",
     "parenttype": "Workspace Sidebar"
-  }
+  },
+    {"doctype": "Workspace Sidebar Item", "idx": 19, "type": "Link", "icon": "user-round-plus", "label": "Receptionist", "link_to": "Receptionist", "link_type": "DocType", "child": 0, "parent": "Ex Healthcare", "parentfield": "items", "parenttype": "Workspace Sidebar"}
  ]
 }

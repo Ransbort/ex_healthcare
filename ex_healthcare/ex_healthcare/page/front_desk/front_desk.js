@@ -5,9 +5,10 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		single_column: true
 	});
 
-	// Simple short "ping" tone, base64-encoded so no separate file/upload
-	// is needed. Swap this data URI for your own .mp3/.wav asset later
-	// if you want a custom sound per department.
+	// =============================================
+	// REALTIME SOUND NOTIFICATIONS
+	// =============================================
+	
 	const notificationSound = new Audio(
 		"/assets/ex_healthcare/sounds/notify.mp3"
 	);

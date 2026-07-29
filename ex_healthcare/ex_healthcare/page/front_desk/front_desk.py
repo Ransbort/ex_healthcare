@@ -32,6 +32,7 @@ def create_walkin_patient(first_name, last_name=None, mobile=None, gender=None, 
 
 
 DEFAULT_APPOINTMENT_DURATION_MINUTES = 15
+MINIMUM_APPOINTMENT_DURATION_MINUTES = 5
 
 
 def _resolve_duration(appointment_type):
@@ -42,20 +43,31 @@ def _resolve_duration(appointment_type):
 
 	Prefer Appointment Type duration.
 	Fallback to default duration.
+
+	Hard floor at MINIMUM_APPOINTMENT_DURATION_MINUTES so that,
+	regardless of what Appointment Type / Practitioner-level
+	overrides do downstream inside Healthcare's own validate(),
+	we never hand off a 0/negative/None duration.
 	"""
 
-	if appointment_type:
+	duration = None
 
+	if appointment_type:
 		duration = frappe.db.get_value(
 			"Appointment Type",
 			appointment_type,
 			"default_duration"
 		)
 
-		if duration:
-			return duration
+	try:
+		duration = int(duration) if duration else DEFAULT_APPOINTMENT_DURATION_MINUTES
+	except (TypeError, ValueError):
+		duration = DEFAULT_APPOINTMENT_DURATION_MINUTES
 
-	return DEFAULT_APPOINTMENT_DURATION_MINUTES
+	if duration < MINIMUM_APPOINTMENT_DURATION_MINUTES:
+		duration = MINIMUM_APPOINTMENT_DURATION_MINUTES
+
+	return duration
 
 
 
@@ -111,7 +123,27 @@ def create_consultation(
 	})
 
 
-	appointment.insert(ignore_permissions=True)
+	try:
+		appointment.insert(ignore_permissions=True)
+	except frappe.ValidationError:
+		frappe.log_error(
+			title="Front Desk: create_consultation appointment insert failed",
+			message=(
+				f"patient={patient}\n"
+				f"practitioner={practitioner}\n"
+				f"department={department}\n"
+				f"appointment_type={appointment_type}\n"
+				f"appointment_date={appointment_date!r}\n"
+				f"appointment_time={appointment_time!r}\n"
+				f"resolved_duration={duration!r}\n"
+				f"appointment_datetime={appointment_datetime!r}\n"
+				f"appointment_end_datetime={appointment_end_datetime!r}\n"
+				f"doc.duration_after_get_doc={appointment.duration!r}\n"
+				f"doc.appointment_datetime_after_get_doc={appointment.appointment_datetime!r}\n"
+				f"doc.appointment_end_datetime_after_get_doc={appointment.appointment_end_datetime!r}\n"
+			),
+		)
+		raise
 
 
 	invoice_name = None

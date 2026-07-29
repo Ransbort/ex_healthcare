@@ -346,26 +346,39 @@ def _create_consultation_invoice(patient, amount, encounter_name):
 
 	return invoice.name
 
+def on_payment_entry_submit(doc, method=None):
+	"""Doc event hook (wire up in hooks.py against Payment Entry's
+	on_submit) — once a Payment Entry is submitted against a
+	consultation invoice we created, check if that invoice is now
+	fully paid and, if so, advance the linked encounter from
+	Payment Pending to Paid - Awaiting Vitals.
 
-def on_sales_invoice_payment(doc, method=None):
-	"""Doc event hook (wire up in hooks.py against Sales Invoice's
-	on_update — see updated hooks_snippet) — once a consultation invoice
-	we created gets fully paid via the Cashier Portal (outstanding_amount
-	hits 0), advance the linked encounter from Payment Pending to
-	Paid - Awaiting Vitals so it shows up in the nurse's queue.
+	Hooking here instead of Sales Invoice's on_update: ERPNext updates
+	the referenced invoice's outstanding_amount as part of Payment
+	Entry submission, but not always via a full doc.save() that would
+	re-fire Sales Invoice's own doc events - so on_update on Sales
+	Invoice is not a reliable place to catch this. Payment Entry
+	submission itself always fires exactly once per payment.
 	"""
 
-	if doc.outstanding_amount != 0:
+	if doc.payment_type != "Receive":
 		return
 
-	encounter_name = frappe.db.get_value(
-		"Patient Encounter",
-		{"consultation_invoice": doc.name, "queue_status": "Payment Pending"},
-		"name",
-	)
-	if encounter_name:
-		frappe.db.set_value("Patient Encounter", encounter_name, "queue_status", "Paid - Awaiting Vitals")
+	for ref in doc.references:
+		if ref.reference_doctype != "Sales Invoice":
+			continue
 
+		outstanding = frappe.db.get_value("Sales Invoice", ref.reference_name, "outstanding_amount")
+		if outstanding != 0:
+			continue
+
+		encounter_name = frappe.db.get_value(
+			"Patient Encounter",
+			{"consultation_invoice": ref.reference_name, "queue_status": "Payment Pending"},
+			"name",
+		)
+		if encounter_name:
+			frappe.db.set_value("Patient Encounter", encounter_name, "queue_status", "Paid - Awaiting Vitals")
 
 # =============================================
 # QUEUE (reads Patient Encounter, filtered to

@@ -475,6 +475,7 @@ def get_queue(date=None, queue_status=None):
 			filters={"name": ["in", patient_ids]},
 			fields=["name", "first_name", "last_name"],
 		)
+
 		def _resolve_full_name(p):
 			first = (p.get("first_name") or "").strip()
 			last = (p.get("last_name") or "").strip()
@@ -488,7 +489,7 @@ def get_queue(date=None, queue_status=None):
 			return " ".join(p["name"].split()) or first
 
 		full_name_map = {p["name"]: _resolve_full_name(p) for p in patients}
-		}
+
 		for row in rows:
 			if row.get("patient") in full_name_map:
 				row["patient_name"] = full_name_map[row["patient"]] or row["patient_name"]

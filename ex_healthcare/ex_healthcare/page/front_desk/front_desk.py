@@ -328,9 +328,6 @@ def _create_consultation_invoice(patient, amount, encounter_name):
 		"customer": customer,
 		"patient": patient,
 		"company": default_company,
-
-		"custom_department": "Consultation",
-
 		"posting_date": nowdate(),
 		"due_date": nowdate(),
 

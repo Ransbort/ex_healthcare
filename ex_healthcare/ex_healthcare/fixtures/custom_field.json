@@ -1,0 +1,128 @@
+[
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "queue_status",
+    "label": "Queue Status",
+    "fieldtype": "Select",
+    "options": "Registered\nPayment Pending\nPaid - Awaiting Vitals\nWith Nurse\nWith Doctor\nIn Consultation\nCompleted\nCancelled",
+    "default": "Registered",
+    "in_list_view": 1,
+    "in_standard_filter": 1,
+    "insert_after": "status",
+    "no_copy": 1,
+    "print_hide": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "front_desk_section",
+    "fieldtype": "Section Break",
+    "label": "Front Desk / Nurse Station",
+    "insert_after": "queue_status",
+    "collapsible": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "consultation_invoice",
+    "label": "Consultation Invoice",
+    "fieldtype": "Link",
+    "options": "Sales Invoice",
+    "insert_after": "front_desk_section",
+    "read_only": 1,
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "checked_in_at",
+    "label": "Checked In At",
+    "fieldtype": "Datetime",
+    "insert_after": "consultation_invoice",
+    "read_only": 1,
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_column_break",
+    "fieldtype": "Column Break",
+    "insert_after": "checked_in_at"
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_temperature",
+    "label": "Temperature (\u00b0C)",
+    "fieldtype": "Float",
+    "insert_after": "vitals_column_break",
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_blood_pressure",
+    "label": "Blood Pressure",
+    "fieldtype": "Data",
+    "insert_after": "vitals_temperature",
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_pulse",
+    "label": "Pulse (bpm)",
+    "fieldtype": "Int",
+    "insert_after": "vitals_blood_pressure",
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_weight",
+    "label": "Weight (kg)",
+    "fieldtype": "Float",
+    "insert_after": "vitals_pulse",
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_height",
+    "label": "Height (cm)",
+    "fieldtype": "Float",
+    "insert_after": "vitals_weight",
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_notes",
+    "label": "Nurse Notes",
+    "fieldtype": "Small Text",
+    "insert_after": "vitals_height",
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_recorded_by",
+    "label": "Vitals Recorded By",
+    "fieldtype": "Link",
+    "options": "User",
+    "insert_after": "vitals_notes",
+    "read_only": 1,
+    "no_copy": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Patient Appointment",
+    "fieldname": "vitals_recorded_on",
+    "label": "Vitals Recorded On",
+    "fieldtype": "Datetime",
+    "insert_after": "vitals_recorded_by",
+    "read_only": 1,
+    "no_copy": 1
+  }
+]

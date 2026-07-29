@@ -42,7 +42,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			.toggle-btn:hover { background: #e9ecef; }
 			.toggle-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
 
-			.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; overflow: visible; }
+			.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; overflow: visible; padding:15px; }
 			.form-grid .frappe-control, .form-grid .form-group { margin-bottom: 0; overflow: visible; position: relative; }
 			.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; overflow: visible; }
 			.form-grid-2 .frappe-control, .form-grid-2 .form-group { margin-bottom: 0; overflow: visible; position: relative; }

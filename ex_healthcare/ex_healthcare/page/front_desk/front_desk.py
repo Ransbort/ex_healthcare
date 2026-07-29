@@ -8,6 +8,16 @@ from frappe.utils import now_datetime, nowdate, nowtime, add_to_date
 # =============================================
 
 @frappe.whitelist()
+def get_server_today():
+	"""The site's own idea of 'today', for the front-end to default its
+	date filters against instead of the browser's local clock/timezone —
+	the two can disagree by a day if the browser sits in a different
+	timezone than the site, since encounter_date is always stamped with
+	server-side nowdate()."""
+	return nowdate()
+
+
+@frappe.whitelist()
 def create_walkin_patient(first_name, last_name=None, mobile=None, gender=None, dob=None):
 	"""Register a brand-new walk-in patient."""
 
@@ -178,6 +188,18 @@ def get_pending_checkins(date=None, patient=None):
 # that carries the queue from here on)
 # =============================================
 
+def _patient_and_practitioner_names(patient, practitioner):
+	"""Resolve display names explicitly rather than relying on Frappe's
+	automatic fetch-from mechanism, which isn't reliably populating
+	patient_name/practitioner_name when the Encounter is built from a
+	plain dict and inserted via the API (as opposed to being saved
+	through the desk form, where fetch-from is triggered on change)."""
+	return (
+		frappe.db.get_value("Patient", patient, "patient_name"),
+		frappe.db.get_value("Healthcare Practitioner", practitioner, "practitioner_name"),
+	)
+
+
 @frappe.whitelist()
 def check_in_appointment(appointment, consultation_fee=0):
 	"""Patient with a booked appointment has physically arrived.
@@ -201,10 +223,14 @@ def check_in_appointment(appointment, consultation_fee=0):
 			"queue_status": frappe.db.get_value("Patient Encounter", existing, "queue_status"),
 		}
 
+	patient_name, practitioner_name = _patient_and_practitioner_names(appt.patient, appt.practitioner)
+
 	encounter = frappe.get_doc({
 		"doctype": "Patient Encounter",
 		"patient": appt.patient,
+		"patient_name": patient_name,
 		"practitioner": appt.practitioner,
+		"practitioner_name": practitioner_name,
 		"medical_department": appt.department,
 		# Patient Encounter has appointment_type as a mandatory field of
 		# its own — inherit it from the booking rather than asking the
@@ -230,10 +256,14 @@ def create_walkin_encounter(patient, practitioner, appointment_type, department=
 	as a mandatory field with no Patient Appointment to inherit it from.
 	"""
 
+	patient_name, practitioner_name = _patient_and_practitioner_names(patient, practitioner)
+
 	encounter = frappe.get_doc({
 		"doctype": "Patient Encounter",
 		"patient": patient,
+		"patient_name": patient_name,
 		"practitioner": practitioner,
+		"practitioner_name": practitioner_name,
 		"medical_department": department,
 		"appointment_type": appointment_type,
 		"encounter_date": nowdate(),

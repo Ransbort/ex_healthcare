@@ -448,8 +448,10 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	function handleCheckinResponse(r) {
 		if (r.message && r.message.status === 'Success') {
 			let msg = __('Checked in — {0}', [r.message.encounter]);
-			if (r.message.invoice) msg += ' — ' + __('Invoice {0} paid', [r.message.invoice]);
-			frappe.show_alert({ message: msg, indicator: 'green' }, 8);
+			if (r.message.invoice) {
+				msg += ' — ' + __('Invoice {0} created, awaiting payment at Cashier Portal', [r.message.invoice]);
+			}
+			frappe.show_alert({ message: msg, indicator: r.message.invoice ? 'orange' : 'green' }, 8);
 			ci_patient.set_value('');
 			ci_appointment.set_value('');
 			ci_appointment_type.set_value('');

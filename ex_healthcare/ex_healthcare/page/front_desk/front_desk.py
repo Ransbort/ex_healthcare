@@ -1,12 +1,10 @@
-import json
-
 import frappe
 from frappe import _
 from frappe.utils import now_datetime, nowdate, nowtime, add_to_date
 
 
 # =============================================
-# CHECK-IN
+# PATIENT REGISTRATION
 # =============================================
 
 @frappe.whitelist()
@@ -70,6 +68,9 @@ def _resolve_duration(appointment_type):
 	return duration
 
 
+# =============================================
+# BOOKING (schedule only — no queue, no invoice)
+# =============================================
 
 @frappe.whitelist()
 def create_consultation(
@@ -77,31 +78,25 @@ def create_consultation(
 	practitioner,
 	department=None,
 	appointment_type=None,
-	consultation_fee=0,
 	appointment_date=None,
 	appointment_time=None,
 ):
-	"""Create consultation Patient Appointment + invoice."""
+	"""Book a Patient Appointment.
+
+	This is a pure schedule record now: no queue_status, no
+	checked_in_at, no invoice. Those only come into existence once the
+	patient physically arrives — see check_in_appointment() below.
+	"""
 
 	appointment_date = appointment_date or nowdate()
 	appointment_time = appointment_time or nowtime()
 
 	duration = int(_resolve_duration(appointment_type))
 
-
-	# Healthcare v16 datetime fields
-	appointment_datetime = (
-		f"{appointment_date} {appointment_time}"
-	)
-
-	appointment_end_datetime = add_to_date(
-		appointment_datetime,
-		minutes=duration
-	)
-
+	appointment_datetime = f"{appointment_date} {appointment_time}"
+	appointment_end_datetime = add_to_date(appointment_datetime, minutes=duration)
 
 	appointment = frappe.get_doc({
-
 		"doctype": "Patient Appointment",
 
 		"patient": patient,
@@ -118,10 +113,7 @@ def create_consultation(
 		"duration": duration,
 
 		"status": "Open",
-		"queue_status": "Registered",
-		"checked_in_at": now_datetime(),
 	})
-
 
 	try:
 		appointment.insert(ignore_permissions=True)
@@ -138,82 +130,150 @@ def create_consultation(
 				f"resolved_duration={duration!r}\n"
 				f"appointment_datetime={appointment_datetime!r}\n"
 				f"appointment_end_datetime={appointment_end_datetime!r}\n"
-				f"doc.duration_after_get_doc={appointment.duration!r}\n"
-				f"doc.appointment_datetime_after_get_doc={appointment.appointment_datetime!r}\n"
-				f"doc.appointment_end_datetime_after_get_doc={appointment.appointment_end_datetime!r}\n"
 			),
 		)
 		raise
 
-
-	invoice_name = None
-
-
-	if float(consultation_fee or 0) > 0:
-
-		invoice_name = _create_paid_consultation_invoice(
-			patient,
-			consultation_fee,
-			appointment.name
-		)
-
-		appointment.db_set(
-			"consultation_invoice",
-			invoice_name
-		)
-
-		appointment.db_set(
-			"queue_status",
-			"Paid - Awaiting Vitals"
-		)
-
-	else:
-
-		appointment.db_set(
-			"queue_status",
-			"Payment Pending"
-		)
-
-
 	return {
 		"status": "Success",
 		"appointment": appointment.name,
-		"invoice": invoice_name,
-		"queue_status": appointment.queue_status,
 	}
 
 
+@frappe.whitelist()
+def get_pending_checkins(date=None, patient=None):
+	"""Booked appointments for `date` that have not yet been checked in
+	(i.e. no Patient Encounter has been created against them yet)."""
 
-def _create_paid_consultation_invoice(patient, amount, appointment_name):
+	date = date or nowdate()
+
+	filters = {
+		"appointment_date": date,
+		"status": ["!=", "Cancelled"],
+	}
+	if patient:
+		filters["patient"] = patient
+
+	appointments = frappe.get_all(
+		"Patient Appointment",
+		filters=filters,
+		fields=["name", "patient", "patient_name", "practitioner", "practitioner_name", "appointment_time"],
+		order_by="appointment_time asc",
+	)
+
+	if not appointments:
+		return []
+
+	already_checked_in = set(frappe.get_all(
+		"Patient Encounter",
+		filters={"appointment": ["in", [a.name for a in appointments]]},
+		pluck="appointment",
+	))
+
+	return [a for a in appointments if a.name not in already_checked_in]
+
+
+# =============================================
+# CHECK-IN (creates the draft Patient Encounter
+# that carries the queue from here on)
+# =============================================
+
+@frappe.whitelist()
+def check_in_appointment(appointment, consultation_fee=0):
+	"""Patient with a booked appointment has physically arrived.
+
+	Creates the draft Patient Encounter (docstatus=0) that now owns
+	queue_status / checked_in_at / vitals_* / consultation_invoice.
+	The Patient Appointment record itself is left untouched (it stays
+	a plain schedule record) apart from being linked via `appointment`.
+	"""
+
+	appt = frappe.get_doc("Patient Appointment", appointment)
+
+	# Idempotency: if this appointment was already checked in, don't
+	# spin up a second Encounter — just hand back the existing one.
+	existing = frappe.db.get_value("Patient Encounter", {"appointment": appt.name}, "name")
+	if existing:
+		return {
+			"status": "Success",
+			"encounter": existing,
+			"invoice": frappe.db.get_value("Patient Encounter", existing, "consultation_invoice"),
+			"queue_status": frappe.db.get_value("Patient Encounter", existing, "queue_status"),
+		}
+
+	encounter = frappe.get_doc({
+		"doctype": "Patient Encounter",
+		"patient": appt.patient,
+		"practitioner": appt.practitioner,
+		"medical_department": appt.department,
+		"appointment": appt.name,
+		"encounter_date": nowdate(),
+		"encounter_time": nowtime(),
+		"queue_status": "Registered",
+		"checked_in_at": now_datetime(),
+	})
+	encounter.insert(ignore_permissions=True)
+
+	return _finalize_checkin(encounter, appt.patient, consultation_fee)
+
+
+@frappe.whitelist()
+def create_walkin_encounter(patient, practitioner, department=None, consultation_fee=0):
+	"""Walk-in patient with no prior booking. Skips Patient Appointment
+	entirely and creates the draft Patient Encounter directly."""
+
+	encounter = frappe.get_doc({
+		"doctype": "Patient Encounter",
+		"patient": patient,
+		"practitioner": practitioner,
+		"medical_department": department,
+		"encounter_date": nowdate(),
+		"encounter_time": nowtime(),
+		"queue_status": "Registered",
+		"checked_in_at": now_datetime(),
+	})
+	encounter.insert(ignore_permissions=True)
+
+	return _finalize_checkin(encounter, patient, consultation_fee)
+
+
+def _finalize_checkin(encounter, patient, consultation_fee):
+	"""Shared tail end of both check-in paths: raise the paid invoice (if
+	any) and set the encounter's queue_status accordingly."""
+
+	invoice_name = None
+
+	if float(consultation_fee or 0) > 0:
+		invoice_name = _create_paid_consultation_invoice(patient, consultation_fee, encounter.name)
+		encounter.db_set("consultation_invoice", invoice_name)
+		encounter.db_set("queue_status", "Paid - Awaiting Vitals")
+	else:
+		encounter.db_set("queue_status", "Payment Pending")
+
+	return {
+		"status": "Success",
+		"encounter": encounter.name,
+		"invoice": invoice_name,
+		"queue_status": encounter.queue_status,
+	}
+
+
+def _create_paid_consultation_invoice(patient, amount, encounter_name):
 	"""Create paid consultation Sales Invoice."""
 
 	CONSULTATION_ITEM_CODE = "Consultation"
 
-
-	patient_doc = frappe.get_doc(
-		"Patient",
-		patient
-	)
-
+	patient_doc = frappe.get_doc("Patient", patient)
 	customer = patient_doc.customer or patient_doc.name
 
-
-	default_company = frappe.defaults.get_global_default(
-		"company"
-	)
-
+	default_company = frappe.defaults.get_global_default("company")
 
 	mode_of_payment = (
-		frappe.db.get_single_value(
-			"Healthcare Settings",
-			"default_mode_of_payment"
-		)
+		frappe.db.get_single_value("Healthcare Settings", "default_mode_of_payment")
 		or "Cash"
 	)
 
-
 	invoice = frappe.get_doc({
-
 		"doctype": "Sales Invoice",
 
 		"customer": customer,
@@ -231,30 +291,24 @@ def _create_paid_consultation_invoice(patient, amount, appointment_name):
 			"rate": float(amount),
 		}],
 
-
 		"payments": [{
 			"mode_of_payment": mode_of_payment,
 			"amount": float(amount),
 		}],
 
-
-		"remarks": (
-			f"Consultation fee for Patient Appointment {appointment_name}"
-		),
-
+		"remarks": f"Consultation fee for Patient Encounter {encounter_name}",
 	})
 
-
 	invoice.insert(ignore_permissions=True)
-
 	invoice.submit()
 
 	return invoice.name
 
 
-
 # =============================================
-# QUEUE
+# QUEUE (now reads Patient Encounter, filtered
+# to docstatus=0 — a submitted Encounter has
+# already left the front-desk queue)
 # =============================================
 
 @frappe.whitelist()
@@ -262,23 +316,20 @@ def get_queue(date=None, queue_status=None):
 
 	date = date or nowdate()
 
-
 	filters = {
-		"appointment_date": date
+		"encounter_date": date,
+		"docstatus": 0,
 	}
-
 
 	if queue_status:
 		filters["queue_status"] = queue_status
 
-
 	rows = frappe.get_all(
-		"Patient Appointment",
+		"Patient Encounter",
 
 		filters=filters,
 
 		fields=[
-
 			"name",
 			"patient",
 			"patient_name",
@@ -286,11 +337,11 @@ def get_queue(date=None, queue_status=None):
 			"practitioner",
 			"practitioner_name",
 
-			"department",
+			"medical_department",
 
-			"appointment_type",
+			"appointment",
 
-			"appointment_time",
+			"encounter_time",
 
 			"queue_status",
 
@@ -304,15 +355,12 @@ def get_queue(date=None, queue_status=None):
 			"vitals_weight",
 			"vitals_height",
 			"vitals_notes",
-
 		],
 
-		order_by="appointment_time asc",
+		order_by="encounter_time asc",
 	)
 
-
 	return rows
-
 
 
 # =============================================
@@ -320,24 +368,16 @@ def get_queue(date=None, queue_status=None):
 # =============================================
 
 @frappe.whitelist()
-def send_to_nurse(appointment):
+def send_to_nurse(encounter):
 
-	frappe.db.set_value(
-		"Patient Appointment",
-		appointment,
-		"queue_status",
-		"With Nurse"
-	)
+	frappe.db.set_value("Patient Encounter", encounter, "queue_status", "With Nurse")
 
-	return {
-		"status": "Success"
-	}
-
+	return {"status": "Success"}
 
 
 @frappe.whitelist()
 def save_vitals(
-	appointment,
+	encounter,
 	temperature=None,
 	blood_pressure=None,
 	pulse=None,
@@ -347,7 +387,6 @@ def save_vitals(
 ):
 
 	doc_updates = {
-
 		"vitals_temperature": temperature,
 		"vitals_blood_pressure": blood_pressure,
 		"vitals_pulse": pulse,
@@ -359,24 +398,12 @@ def save_vitals(
 		"vitals_recorded_on": now_datetime(),
 
 		"queue_status": "With Doctor",
-
 	}
-
 
 	for field, value in doc_updates.items():
+		frappe.db.set_value("Patient Encounter", encounter, field, value)
 
-		frappe.db.set_value(
-			"Patient Appointment",
-			appointment,
-			field,
-			value
-		)
-
-
-	return {
-		"status": "Success"
-	}
-
+	return {"status": "Success"}
 
 
 # =============================================
@@ -384,45 +411,26 @@ def save_vitals(
 # =============================================
 
 @frappe.whitelist()
-def start_consultation(appointment):
+def start_consultation(encounter):
+	"""The Encounter already exists (created at check-in) — this just
+	flips it into 'In Consultation' so the doctor can open and complete
+	the same draft document."""
 
-	appt = frappe.get_doc(
-		"Patient Appointment",
-		appointment
-	)
+	enc = frappe.get_doc("Patient Encounter", encounter)
 
-
-	frappe.db.set_value(
-		"Patient Appointment",
-		appointment,
-		"queue_status",
-		"In Consultation"
-	)
-
+	frappe.db.set_value("Patient Encounter", encounter, "queue_status", "In Consultation")
 
 	return {
-
 		"status": "Success",
-
-		"patient": appt.patient,
-
-		"practitioner": appt.practitioner,
-
-		"appointment": appt.name,
-
-		"department": appt.department,
-
+		"patient": enc.patient,
+		"practitioner": enc.practitioner,
+		"encounter": enc.name,
 	}
 
 
-
 def on_patient_encounter_submit(doc, method=None):
+	"""Doctor completes + submits the Encounter -> queue_status = Completed.
+	No more lookup into Patient Appointment: the queue state lives on
+	this document itself now."""
 
-	if getattr(doc, "appointment", None):
-
-		frappe.db.set_value(
-			"Patient Appointment",
-			doc.appointment,
-			"queue_status",
-			"Completed"
-		)
+	doc.db_set("queue_status", "Completed")

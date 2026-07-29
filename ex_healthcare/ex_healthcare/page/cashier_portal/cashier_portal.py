@@ -243,6 +243,13 @@ def create_payment_entry(invoice_name, mode_of_payment, remarks=None, reference_
     pe.insert(ignore_permissions=True)
     pe.submit()
 
+	_notify("queue_update", {
+        "department": "front_desk",
+        "message": f"Payment received for {invoice_name}",
+        "encounter": None,
+    })
+
+
     return {"status": "Success", "name": pe.name}
 
 
@@ -288,6 +295,12 @@ def create_invoice_and_payment_from_order(order_name, mode_of_payment, remarks=N
     dn = make_delivery_note(order_name)
     dn.insert(ignore_permissions=True)
     dn.submit()
+	
+    _notify("queue_update", {
+        "department": "front_desk",
+        "message": f"Pharmacy order {order_name} paid and dispatched",
+        "encounter": None,
+    })
 
     return {
         "status": "Success",

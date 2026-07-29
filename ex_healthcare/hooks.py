@@ -39,12 +39,6 @@ doc_events = {
 	}
 }
 
-# Also make sure these are declared so `bench migrate` picks up the fixtures:
-fixtures = [
-	# ... merge with any existing fixtures you already have ...
-	{"doctype": "Custom Field", "filters": [["dt", "=", "Patient Appointment"]]},
-]
-
 
 # Includes in <head>
 # ------------------

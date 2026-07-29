@@ -48,7 +48,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			.form-grid-2 .frappe-control, .form-grid-2 .form-group { margin-bottom: 0; overflow: visible; position: relative; }
 
 			/* Autocomplete dropdowns (Link fields) must render above sibling grid cells */
-			.form-grid .awesomplete, .form-grid-2 .awesomplete { position: relative; z-index: 100; }
+			.form-grid .awesomplete, .form-grid-2 .awesomplete { position: relative; }
 			.form-grid .awesomplete > ul, .form-grid-2 .awesomplete > ul { z-index: 999 !important; }
 
 			.filter-bar {
@@ -140,6 +140,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 						<div data-fieldname="ci_date"></div>
 						<div data-fieldname="ci_time"></div>
 						<div data-fieldname="ci_fee"></div>
+						<div data-fieldname="ci_service_unit"></div>
 					</div>
 					<button class="btn btn-success btn-lg" id="create-consultation-btn">
 						<i class="fa fa-check"></i> Create Appointment &amp; Bill
@@ -348,6 +349,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 				practitioner: practitioner,
 				department: ci_department.get_value(),
 				appointment_type: ci_appointment_type.get_value(),
+				service_unit: ci_service_unit.get_value(),
 				consultation_fee: ci_fee.get_value() || 0,
 				appointment_date: ci_date.get_value(),
 				appointment_time: ci_time.get_value()
@@ -366,6 +368,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 					np_gender.set_value('');
 					np_dob.set_value('');
 					ci_fee.set_value(0);
+					ci_service_unit.set_value('');
 					registeredPatient = null;
 					if (page.main.find('#queue-tab').hasClass('active')) loadQueue();
 				}

@@ -30,6 +30,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 				overflow: visible; position: relative;
 			}
 			.fd-section h5 { font-weight: 600; margin-bottom: 15px; color: #495057; }
+			.fd-section .fd-hint { font-size: 0.85rem; color: #6c757d; margin: -10px 0 15px; }
 
 			.toggle-group {
 				display: flex; border: 1px solid #e0e0e0; border-radius: 8px;
@@ -130,20 +131,22 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 				</div>
 
 				<div class="fd-section">
-					<h5><i class="fa fa-calendar-plus-o"></i> Consultation</h5>
+					<h5><i class="fa fa-sign-in"></i> Check-In</h5>
+					<p class="fd-hint">
+						${__('Pick a booked appointment to check it in, or leave it blank for a walk-in with no prior booking.')}
+					</p>
 					<div class="form-grid">
+						<div data-fieldname="ci_appointment"></div>
 						<div data-fieldname="ci_practitioner"></div>
 						<div data-fieldname="ci_department"></div>
-						<div data-fieldname="ci_appointment_type"></div>
 					</div>
 					<div class="form-grid">
 						<div data-fieldname="ci_date"></div>
 						<div data-fieldname="ci_time"></div>
 						<div data-fieldname="ci_fee"></div>
-						<div data-fieldname="ci_service_unit"></div>
 					</div>
 					<button class="btn btn-success btn-lg" id="create-consultation-btn">
-						<i class="fa fa-check"></i> Create Appointment &amp; Bill
+						<i class="fa fa-check"></i> Check In &amp; Bill
 					</button>
 				</div>
 			</div>
@@ -230,9 +233,29 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	});
 	np_dob.refresh();
 
+	// Optional: an already-booked appointment being checked in. Left
+	// blank => this is a walk-in with no prior booking.
+	let ci_appointment = frappe.ui.form.make_control({
+		parent: page.main.find('[data-fieldname="ci_appointment"]'),
+		df: {
+			fieldtype: 'Link', fieldname: 'ci_appointment', options: 'Patient Appointment',
+			label: 'Existing Appointment (optional)',
+			get_query: function() {
+				return {
+					filters: {
+						appointment_date: ci_date ? ci_date.get_value() : frappe.datetime.get_today(),
+						status: ['!=', 'Cancelled']
+					}
+				};
+			}
+		},
+		render_input: true
+	});
+	ci_appointment.refresh();
+
 	let ci_practitioner = frappe.ui.form.make_control({
 		parent: page.main.find('[data-fieldname="ci_practitioner"]'),
-		df: { fieldtype: 'Link', fieldname: 'ci_practitioner', options: 'Healthcare Practitioner', label: 'Practitioner', reqd: 1 },
+		df: { fieldtype: 'Link', fieldname: 'ci_practitioner', options: 'Healthcare Practitioner', label: 'Practitioner' },
 		render_input: true
 	});
 	ci_practitioner.refresh();
@@ -244,31 +267,17 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	});
 	ci_department.refresh();
 
-	let ci_appointment_type = frappe.ui.form.make_control({
-		parent: page.main.find('[data-fieldname="ci_appointment_type"]'),
-		df: { fieldtype: 'Link', fieldname: 'ci_appointment_type', options: 'Appointment Type', label: 'Appointment Type' },
-		render_input: true
-	});
-	ci_appointment_type.refresh();
-
 	let ci_date = frappe.ui.form.make_control({
 		parent: page.main.find('[data-fieldname="ci_date"]'),
-		df: { fieldtype: 'Date', fieldname: 'ci_date', label: 'Appointment Date', default: frappe.datetime.get_today() },
+		df: { fieldtype: 'Date', fieldname: 'ci_date', label: 'Date', default: frappe.datetime.get_today() },
 		render_input: true
 	});
 	ci_date.refresh();
 	ci_date.set_value(frappe.datetime.get_today());
 
-	let ci_service_unit = frappe.ui.form.make_control({
-		parent: page.main.find('[data-fieldname="ci_service_unit"]'),
-		df: { fieldtype: 'Link', fieldname: 'ci_service_unit', options: 'Healthcare Service Unit', label: 'Service Unit' },
-		render_input: true
-	});
-	ci_service_unit.refresh();
-
 	let ci_time = frappe.ui.form.make_control({
 		parent: page.main.find('[data-fieldname="ci_time"]'),
-		df: { fieldtype: 'Time', fieldname: 'ci_time', label: 'Appointment Time', default: frappe.datetime.now_time() },
+		df: { fieldtype: 'Time', fieldname: 'ci_time', label: 'Time', default: frappe.datetime.now_time() },
 		render_input: true
 	});
 	ci_time.refresh();
@@ -328,8 +337,25 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		});
 	});
 
-	// Create consultation + bill
+	// Check-in: either check in a picked appointment, or create a
+	// walk-in encounter with no prior booking.
 	page.main.find('#create-consultation-btn').on('click', function() {
+		const appointment = ci_appointment.get_value();
+
+		if (appointment) {
+			frappe.call({
+				method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.check_in_appointment',
+				args: {
+					appointment: appointment,
+					consultation_fee: ci_fee.get_value() || 0
+				},
+				freeze: true,
+				freeze_message: __('Checking in...'),
+				callback: function(r) { handleCheckinResponse(r); }
+			});
+			return;
+		}
+
 		const patient = checkinMode === 'existing' ? ci_patient.get_value() : registeredPatient;
 		const practitioner = ci_practitioner.get_value();
 
@@ -343,38 +369,36 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		}
 
 		frappe.call({
-			method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.create_consultation',
+			method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.create_walkin_encounter',
 			args: {
 				patient: patient,
 				practitioner: practitioner,
 				department: ci_department.get_value(),
-				appointment_type: ci_appointment_type.get_value(),
-				service_unit: ci_service_unit.get_value(),
-				consultation_fee: ci_fee.get_value() || 0,
-				appointment_date: ci_date.get_value(),
-				appointment_time: ci_time.get_value()
+				consultation_fee: ci_fee.get_value() || 0
 			},
 			freeze: true,
-			freeze_message: __('Creating appointment and invoice...'),
-			callback: function(r) {
-				if (r.message && r.message.status === 'Success') {
-					let msg = __('Appointment {0} created', [r.message.appointment]);
-					if (r.message.invoice) msg += ' — ' + __('Invoice {0} paid', [r.message.invoice]);
-					frappe.show_alert({ message: msg, indicator: 'green' }, 8);
-					ci_patient.set_value('');
-					np_first_name.set_value('');
-					np_last_name.set_value('');
-					np_mobile.set_value('');
-					np_gender.set_value('');
-					np_dob.set_value('');
-					ci_fee.set_value(0);
-					ci_service_unit.set_value('');
-					registeredPatient = null;
-					if (page.main.find('#queue-tab').hasClass('active')) loadQueue();
-				}
-			}
+			freeze_message: __('Checking in...'),
+			callback: function(r) { handleCheckinResponse(r); }
 		});
 	});
+
+	function handleCheckinResponse(r) {
+		if (r.message && r.message.status === 'Success') {
+			let msg = __('Checked in — {0}', [r.message.encounter]);
+			if (r.message.invoice) msg += ' — ' + __('Invoice {0} paid', [r.message.invoice]);
+			frappe.show_alert({ message: msg, indicator: 'green' }, 8);
+			ci_patient.set_value('');
+			ci_appointment.set_value('');
+			np_first_name.set_value('');
+			np_last_name.set_value('');
+			np_mobile.set_value('');
+			np_gender.set_value('');
+			np_dob.set_value('');
+			ci_fee.set_value(0);
+			registeredPatient = null;
+			if (page.main.find('#queue-tab').hasClass('active')) loadQueue();
+		}
+	}
 
 	// =============================================
 	// TAB SWITCHING
@@ -427,7 +451,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 	function renderQueueTable(rows) {
 		const container = page.main.find('#queue-table-container');
 		if (!rows.length) {
-			container.html(`<div class="empty-state"><i class="fa fa-inbox"></i><h4>${__('No appointments')}</h4></div>`);
+			container.html(`<div class="empty-state"><i class="fa fa-inbox"></i><h4>${__('No checked-in patients')}</h4></div>`);
 			return;
 		}
 		let body = '';
@@ -438,7 +462,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			}
 			body += `
 				<tr>
-					<td>${row.appointment_time || ''}</td>
+					<td>${row.encounter_time || ''}</td>
 					<td>${row.patient_name || ''}</td>
 					<td>${row.practitioner_name || row.practitioner || ''}</td>
 					<td>${statusBadge(row.queue_status)}</td>
@@ -457,7 +481,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			const name = $(this).data('name');
 			frappe.call({
 				method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.send_to_nurse',
-				args: { appointment: name },
+				args: { encounter: name },
 				callback: function() {
 					frappe.show_alert({ message: __('Sent to nurse'), indicator: 'green' }, 4);
 					loadQueue();
@@ -497,7 +521,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		rows.forEach(function(row) {
 			body += `
 				<tr class="nurse-row" data-name="${row.name}">
-					<td>${row.appointment_time || ''}</td>
+					<td>${row.encounter_time || ''}</td>
 					<td>${row.patient_name || ''}</td>
 					<td>${row.practitioner_name || row.practitioner || ''}</td>
 					<td><button class="btn btn-xs btn-primary btn-open-vitals" data-name="${row.name}">${__('Record Vitals')}</button></td>
@@ -555,7 +579,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			frappe.call({
 				method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.save_vitals',
 				args: {
-					appointment: name,
+					encounter: name,
 					temperature: c.temp.get_value(),
 					blood_pressure: c.bp.get_value(),
 					pulse: c.pulse.get_value(),
@@ -611,7 +635,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			].filter(Boolean).join(' · ') || __('No vitals recorded');
 			body += `
 				<tr>
-					<td>${row.appointment_time || ''}</td>
+					<td>${row.encounter_time || ''}</td>
 					<td>${row.patient_name || ''}</td>
 					<td>${row.practitioner_name || row.practitioner || ''}</td>
 					<td><small>${vitalsSummary}</small></td>
@@ -629,14 +653,12 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			const name = $(this).data('name');
 			frappe.call({
 				method: 'ex_healthcare.ex_healthcare.page.front_desk.front_desk.start_consultation',
-				args: { appointment: name },
+				args: { encounter: name },
 				callback: function(r) {
 					if (r.message && r.message.status === 'Success') {
-						frappe.new_doc('Patient Encounter', {
-							patient: r.message.patient,
-							practitioner: r.message.practitioner,
-							appointment: r.message.appointment
-						});
+						// The Encounter already exists (created at check-in) —
+						// open it directly instead of creating a new one.
+						frappe.set_route('Form', 'Patient Encounter', r.message.encounter);
 					}
 				}
 			});

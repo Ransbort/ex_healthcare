@@ -111,18 +111,6 @@ def create_consultation(
 	})
 
 
-	# =============================================
-	# DEBUG - REMOVE AFTER TESTING
-	# =============================================
-
-	frappe.throw(
-		f"DEBUG start={appointment.appointment_time}, "
-		f"duration={appointment.duration}, "
-		f"datetime={appointment.appointment_datetime}, "
-		f"end={appointment.appointment_end_datetime}"
-	)
-
-
 	appointment.insert(ignore_permissions=True)
 
 

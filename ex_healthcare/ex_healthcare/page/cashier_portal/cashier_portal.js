@@ -10,11 +10,25 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     // =============================================
     const notificationSound = new Audio('/assets/ex_healthcare/sounds/notify.mp3');
 
+	let audioUnlocked = false;
+	function unlockAudio() {
+		if (audioUnlocked) return;
+		notificationSound.play().then(() => {
+			notificationSound.pause();
+			notificationSound.currentTime = 0;
+			audioUnlocked = true;
+		}).catch(() => {});
+	}
+	document.addEventListener('click', unlockAudio, { once: true });
+	document.addEventListener('keydown', unlockAudio, { once: true });
+
     function playNotification() {
         try {
             notificationSound.currentTime = 0;
             notificationSound.play().catch(() => {});
-        } catch (e) {}
+        } catch (e) {
+			console.warn('Notification sound error:', e);
+		}
     }
 
     frappe.realtime.on('queue_update', function(data) {

@@ -25,13 +25,22 @@ from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice, 
 # care how the bucket was decided.
 DEPARTMENT_FIELD = "custom_department"
 
+
+def _notify(event, payload):
+    """Broadcast a realtime event to everyone listening in this site.
+    Kept as a local copy (rather than importing the private helper from
+    front_desk.py) so this file doesn't take on a cross-page dependency
+    on another page's private function."""
+    frappe.publish_realtime(event=event, message=payload)
+
+
 @frappe.whitelist()
 def get_server_today():
-	"""Same rationale as front_desk.get_server_today() — the cashier's
-	browser can be in a different timezone than the site, so default
-	all date fields here to the site's own nowdate() rather than the
-	browser's local clock."""
-	return nowdate()
+    """Same rationale as front_desk.get_server_today() — the cashier's
+    browser can be in a different timezone than the site, so default
+    all date fields here to the site's own nowdate() rather than the
+    browser's local clock."""
+    return nowdate()
 
 
 @frappe.whitelist()
@@ -243,12 +252,11 @@ def create_payment_entry(invoice_name, mode_of_payment, remarks=None, reference_
     pe.insert(ignore_permissions=True)
     pe.submit()
 
-	_notify("queue_update", {
+    _notify("queue_update", {
         "department": "front_desk",
         "message": f"Payment received for {invoice_name}",
         "encounter": None,
     })
-
 
     return {"status": "Success", "name": pe.name}
 
@@ -295,7 +303,7 @@ def create_invoice_and_payment_from_order(order_name, mode_of_payment, remarks=N
     dn = make_delivery_note(order_name)
     dn.insert(ignore_permissions=True)
     dn.submit()
-	
+
     _notify("queue_update", {
         "department": "front_desk",
         "message": f"Pharmacy order {order_name} paid and dispatched",

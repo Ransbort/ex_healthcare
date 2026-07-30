@@ -54,7 +54,7 @@ def bulk_send_to_nurse(encounters):
 		pluck="name",
 	)
 
-for name in eligible:
+	for name in eligible:
 		frappe.db.set_value("Patient Encounter", name, "queue_status", "With Nurse")
 
 	if eligible:
@@ -564,7 +564,7 @@ def save_vitals(
 		"queue_status": "With Doctor",
 	}
 
-for field, value in doc_updates.items():
+	for field, value in doc_updates.items():
 		frappe.db.set_value("Patient Encounter", encounter, field, value)
 
 	patient_name = frappe.db.get_value("Patient Encounter", encounter, "patient_name")

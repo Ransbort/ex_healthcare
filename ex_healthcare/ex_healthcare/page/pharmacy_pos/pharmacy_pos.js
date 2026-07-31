@@ -19,9 +19,213 @@ class PharmacyPOS {
     this.active_category = 'all';
     this.medications = [];
     this.view_mode = 'grid';
+    this.item_group = null;
     this.load_view_preference();
     
-    this.make();
+    this.init();
+	}
+
+	async init() {
+		// Item Group is site-specific (e.g. "Pharmacy", "Dispensary", "OTC Sales")
+		// so it's never hardcoded here - it's configured once via a setup screen
+		// and stored in Ex Healthcare Settings, then reused on every load.
+		await this.check_pharmacy_setup();
+	}
+
+	async check_pharmacy_setup() {
+		try {
+			frappe.dom.freeze(__('Loading Pharmacy POS...'));
+
+			const response = await frappe.call({
+				method: 'ex_healthcare.api.pharmacy.get_pharmacy_settings'
+			});
+
+			frappe.dom.unfreeze();
+
+			const item_group = response.message && response.message.item_group;
+
+			if (!item_group) {
+				this.render_setup_screen();
+				return;
+			}
+
+			this.item_group = item_group;
+			this.make();
+		} catch (error) {
+			frappe.dom.unfreeze();
+			frappe.msgprint(__('Failed to load Pharmacy POS configuration'));
+			console.error(error);
+		}
+	}
+
+	render_setup_screen() {
+		this.wrapper.html(`
+			<div class="pharmacy-setup-wrapper">
+				<style>
+					.pharmacy-setup-wrapper {
+						height: calc(100vh - 60px);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%);
+						font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+					}
+
+					.pharmacy-setup-card {
+						background: #ffffff;
+						border: 1px solid #e2e8f0;
+						border-radius: 16px;
+						padding: 40px;
+						width: 420px;
+						max-width: 90vw;
+						text-align: center;
+						box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+					}
+
+					.pharmacy-setup-icon {
+						width: 64px;
+						height: 64px;
+						margin: 0 auto 16px;
+						border-radius: 50%;
+						background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						font-size: 28px;
+					}
+
+					.pharmacy-setup-title {
+						font-size: 18px;
+						font-weight: 700;
+						color: #1e293b;
+						margin-bottom: 8px;
+					}
+
+					.pharmacy-setup-subtitle {
+						font-size: 13px;
+						color: #64748b;
+						line-height: 1.5;
+						margin-bottom: 24px;
+					}
+
+					.pharmacy-setup-field {
+						text-align: left;
+						margin-bottom: 20px;
+					}
+
+					.pharmacy-setup-btn {
+						width: 100%;
+						justify-content: center;
+					}
+				</style>
+				<div class="pharmacy-setup-card">
+					<div class="pharmacy-setup-icon">💊</div>
+					<div class="pharmacy-setup-title">Set Up Pharmacy POS</div>
+					<div class="pharmacy-setup-subtitle">
+						Choose the Item Group that holds your pharmacy / OTC items so this
+						screen knows which items to show. You can change this later.
+					</div>
+					<div class="pharmacy-setup-field" id="setup-item-group-field"></div>
+					<button class="pos-btn pos-btn-primary pharmacy-setup-btn" id="pharmacy-setup-save" disabled>
+						Save & Continue
+					</button>
+				</div>
+			</div>
+		`);
+
+		const save_btn = this.wrapper.find('#pharmacy-setup-save');
+
+		this.setup_item_group_field = frappe.ui.form.make_control({
+			parent: this.wrapper.find('#setup-item-group-field'),
+			df: {
+				fieldtype: 'Link',
+				options: 'Item Group',
+				fieldname: 'item_group',
+				label: 'Pharmacy Item Group',
+				reqd: 1,
+				onchange: () => {
+					const value = this.setup_item_group_field.get_value();
+					save_btn.prop('disabled', !value);
+				}
+			},
+			render_input: true
+		});
+
+		save_btn.on('click', () => this.save_pharmacy_item_group());
+	}
+
+	async save_pharmacy_item_group() {
+		const item_group = this.setup_item_group_field.get_value();
+
+		if (!item_group) {
+			frappe.msgprint(__('Please select an Item Group'));
+			return;
+		}
+
+		const save_btn = this.wrapper.find('#pharmacy-setup-save');
+		save_btn.prop('disabled', true).text(__('Saving...'));
+
+		try {
+			await frappe.call({
+				method: 'ex_healthcare.api.pharmacy.set_pharmacy_item_group',
+				args: { item_group }
+			});
+
+			this.item_group = item_group;
+
+			frappe.show_alert({
+				message: __('Pharmacy POS configured successfully'),
+				indicator: 'green'
+			}, 2);
+
+			this.make();
+		} catch (error) {
+			save_btn.prop('disabled', false).text(__('Save & Continue'));
+			frappe.msgprint(__('Failed to save configuration'));
+			console.error(error);
+		}
+	}
+
+	open_settings_dialog() {
+		frappe.prompt(
+			[
+				{
+					fieldname: 'item_group',
+					fieldtype: 'Link',
+					options: 'Item Group',
+					label: __('Pharmacy Item Group'),
+					default: this.item_group,
+					reqd: 1
+				}
+			],
+			async (values) => {
+				try {
+					frappe.dom.freeze(__('Updating configuration...'));
+
+					await frappe.call({
+						method: 'ex_healthcare.api.pharmacy.set_pharmacy_item_group',
+						args: { item_group: values.item_group }
+					});
+
+					this.item_group = values.item_group;
+
+					frappe.dom.unfreeze();
+
+					frappe.show_alert({
+						message: __('Pharmacy item group updated'),
+						indicator: 'green'
+					}, 2);
+
+					await this.load_items();
+				} catch (error) {
+					frappe.dom.unfreeze();
+					frappe.msgprint(__('Failed to update configuration'));
+					console.error(error);
+				}
+			},
+			__('Pharmacy POS Settings'),
+			__('Save')
+		);
 	}
 
 	make() {
@@ -1346,6 +1550,9 @@ class PharmacyPOS {
 							<button class="reload-btn" id="reload-btn" title="Reload Medications">
 								🔄
 							</button>
+							<button class="reload-btn" id="pharmacy-settings-btn" title="Pharmacy POS Settings">
+								⚙️
+							</button>
 							<div class="view-toggle" id="view-toggle">
 								<button class="view-btn view-btn-grid active" data-view="grid">
 									<span>🔲</span> Grid
@@ -1509,6 +1716,10 @@ class PharmacyPOS {
 			this.reload_medications();
 		});
 
+		this.wrapper.find('#pharmacy-settings-btn').on('click', () => {
+			this.open_settings_dialog();
+		});
+
 		this.wrapper.find('.view-btn').on('click', (e) => {
 			const view = $(e.currentTarget).data('view');
 			this.set_view_mode(view);
@@ -1602,10 +1813,12 @@ class PharmacyPOS {
 		try {
 			frappe.dom.freeze(__('Loading medications...'));
 
-			// Single optimized server-side call that does everything
+			// Single optimized server-side call that does everything.
+			// item_group is whatever was configured via the setup screen /
+			// settings dialog - never hardcoded.
 			const response = await frappe.call({
 				method: 'ex_healthcare.api.pharmacy.get_pos_medications',
-				args: {}
+				args: { item_group: this.item_group }
 			});
 
 			if (!response.message || response.message.length === 0) {

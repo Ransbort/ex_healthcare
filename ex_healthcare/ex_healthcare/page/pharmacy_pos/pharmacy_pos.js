@@ -1957,10 +1957,12 @@ class PharmacyPOS {
 			}
 
 			// Image display - use item image if available, otherwise show emoji
+			const fallback_icon = med.is_medication ? '💊' : '📦';
+			
 			const image_content = med.image ? 
-				`<img src="${med.image}" alt="${med.generic_name}" class="item-card-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-				<div class="item-card-img-fallback" style="display:none;">💊</div>` :
-				`<div class="item-card-img-fallback">💊</div>`;
+    			`<img src="${med.image}" alt="${med.generic_name}" class="item-card-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    			<div class="item-card-img-fallback" style="display:none;">${fallback_icon}</div>` :
+    			`<div class="item-card-img-fallback">${fallback_icon}</div>`;
 
 			const card = $(`
 				<div class="item-card ${stock_class}" data-medication="${med.medication_name}">

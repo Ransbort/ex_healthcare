@@ -256,6 +256,19 @@
    "parent": "Ex Healthcare", 
    "parentfield": "items", 
    "parenttype": "Workspace Sidebar"
-  }
+  },
+  {
+    "doctype": "Workspace Sidebar Item",
+    "idx": 20,
+    "type": "Link",
+    "icon": "settings",
+    "label": "Setup",
+    "link_to": "Ex Healthcare Settings",
+    "link_type": "DocType",
+    "child": 0,
+    "parent": "Ex Healthcare",
+    "parentfield": "items",
+    "parenttype": "Workspace Sidebar"
+    }
  ]
 }

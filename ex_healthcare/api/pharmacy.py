@@ -12,10 +12,14 @@ def get_pos_medications():
 	"""
 	Single optimized call for the Pharmacy POS grid.
 
-	Joins Medication -> Medication Linked Item -> Item -> Item Price -> Bin
-	in one query instead of the N+1 pattern used by the JS fallback
-	(load_items_fallback). Returns a flat list of dicts shaped exactly like
-	what render_items_grid / render_items_list expect on the frontend.
+	Two sources, unioned:
+	1. Medication -> Medication Linked Item -> Item (prescription-linked drugs,
+	   richest metadata straight from the Medication doctype)
+	2. Item where item_group = "Pharmacy" and not already covered by #1
+	   (walk-in/OTC sales - no consultation or prescription required).
+	   custom_is_medication distinguishes an actual drug (paracetamol,
+	   amoxicillin) from a non-drug Pharmacy item (gloves, syringes,
+	   cotton, bandages) so the frontend can style them differently.
 	"""
 
 	medications = frappe.db.sql(
@@ -54,8 +58,6 @@ def get_pos_medications():
 		as_dict=True,
 	)
 
-	# de-duplicate: a Medication can have more than one linked item row,
-	# only keep the first (matches the JS fallback's "if not already mapped" logic)
 	seen = set()
 	result = []
 
@@ -80,11 +82,76 @@ def get_pos_medications():
 				"stock_qty": med.stock_qty or 0,
 				"dosage_form": med.dosage_form or "",
 				"image": med.image or "",
+				"is_medication": True,
+			}
+		)
+
+	linked_item_codes = {r["item_code"] for r in result if r["item_code"]}
+
+	default_price_list = (
+		frappe.db.get_single_value("Selling Settings", "selling_price_list")
+		or "Standard Selling"
+	)
+
+	pharmacy_items = frappe.db.sql(
+		"""
+		SELECT
+			item.item_code AS item_code,
+			item.item_name AS item_name,
+			item.stock_uom AS stock_uom,
+			item.image AS image,
+			item.standard_rate AS standard_rate,
+			item.custom_is_medication AS is_medication,
+			item.custom_medication_class AS medication_class,
+			item.custom_strength AS strength,
+			item.custom_strength_uom AS strength_uom,
+			item.custom_dosage_form AS dosage_form,
+			ip.price_list_rate AS price_list_rate,
+			COALESCE(stock.total_qty, 0) AS stock_qty
+		FROM `tabItem` item
+		LEFT JOIN `tabItem Price` ip
+			ON ip.item_code = item.item_code
+			AND ip.price_list = %(price_list)s
+			AND ip.selling = 1
+		LEFT JOIN (
+			SELECT item_code, SUM(actual_qty) AS total_qty
+			FROM `tabBin`
+			GROUP BY item_code
+		) stock
+			ON stock.item_code = item.item_code
+		WHERE item.item_group = 'Pharmacy'
+			AND item.disabled = 0
+		ORDER BY item.item_name ASC
+		""",
+		{"price_list": default_price_list},
+		as_dict=True,
+	)
+
+	for item in pharmacy_items:
+		if item.item_code in linked_item_codes:
+			continue
+
+		rate = item.price_list_rate or item.standard_rate or 0
+
+		result.append(
+			{
+				"medication_name": None,
+				"generic_name": item.item_name,
+				"strength": item.strength,
+				"strength_uom": item.strength_uom,
+				"medication_class": item.medication_class,
+				"abbr": None,
+				"item_code": item.item_code,
+				"rate": rate,
+				"stock_uom": item.stock_uom or "Nos",
+				"stock_qty": item.stock_qty or 0,
+				"dosage_form": item.dosage_form or "",
+				"image": item.image or "",
+				"is_medication": bool(item.is_medication),
 			}
 		)
 
 	return result
-
 
 @frappe.whitelist()
 def get_item_by_barcode(barcode):

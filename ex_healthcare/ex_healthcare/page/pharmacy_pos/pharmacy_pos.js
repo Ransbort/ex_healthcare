@@ -1956,7 +1956,12 @@ class PharmacyPOS {
 				stock_badge = `<div class="stock-badge">${stock_qty} in stock</div>`;
 			}
 
+			// Class label - fall back based on whether this is an actual drug
+			// (is_medication) vs a non-drug Pharmacy item (gloves, syringes, etc.)
+			const class_label = med.medication_class || (med.is_medication ? 'General' : 'OTC');
+
 			// Image display - use item image if available, otherwise show emoji
+			// based on is_medication (drug vs OTC supply/consumable)
 			const fallback_icon = med.is_medication ? '💊' : '📦';
 			
 			const image_content = med.image ? 
@@ -1972,7 +1977,7 @@ class PharmacyPOS {
 					</div>
 					<div class="item-card-content">
 						<div class="item-card-name">${med.generic_name}</div>
-						<div class="item-card-meta">${med.medication_class || 'General'}</div>
+						<div class="item-card-meta">${class_label}</div>
 						<div class="item-card-tags">
 							${strength_display}
 							${dosage_form_display}
@@ -2022,19 +2027,23 @@ class PharmacyPOS {
 			
 			const dosage_tag = med.dosage_form ? 
 				`<span class="item-list-tag">${med.dosage_form}</span>` : '';
+
+			// Class label - fall back based on whether this is an actual drug
+			// (is_medication) vs a non-drug Pharmacy item (gloves, syringes, etc.)
+			const class_label = med.medication_class || (med.is_medication ? 'General' : 'OTC');
 			
 			const row = $(`
 				<div class="item-list-row ${stock_qty <= 0 ? 'out-of-stock' : ''}" data-medication="${med.medication_name}">
 					<div class="item-list-image">${image_content}</div>
 					<div class="item-list-details">
 						<div class="item-list-name">${med.generic_name}</div>
-						<div class="item-list-meta">${med.medication_class || 'General'}</div>
+						<div class="item-list-meta">${class_label}</div>
 						<div class="item-list-tags">
 							${strength_tag}
 							${dosage_tag}
 						</div>
 					</div>
-					<div class="item-list-class">${med.medication_class || '-'}</div>
+					<div class="item-list-class">${class_label}</div>
 					<div class="item-list-stock ${stock_class}">${stock_text}</div>
 					<div class="item-list-price">₵${(med.rate || 0).toFixed(2)}</div>
 					<button class="item-list-add-btn" ${stock_qty <= 0 ? 'disabled' : ''}>

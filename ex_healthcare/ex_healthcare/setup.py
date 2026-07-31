@@ -424,5 +424,67 @@ def get_custom_fields():
 				"reqd": 0,
 				"hidden": 0,
 			},
+		],
+		# Pharmacy POS: lets any Item in the "Pharmacy" item_group appear on
+		# the Pharmacy POS grid with the same rich display as a
+		# prescription-linked Medication, even when no Medication /
+		# Medication Linked Item record exists for it - covers walk-in/OTC
+		# drug sales where a patient buys off the shelf without a
+		# consultation. get_pos_medications() in pharmacy.py reads all five
+		# fields directly when building the OTC branch of the POS item list.
+		#
+		# custom_is_medication distinguishes an actual drug (paracetamol,
+		# amoxicillin) from a non-drug Pharmacy item (gloves, syringes,
+		# cotton, bandages) so pharmacy_pos.js can swap the card icon
+		# (💊 vs 📦) and class label (medication_class vs "OTC").
+		"Item": [
+			{
+				"fieldname": "custom_is_medication",
+				"label": "Is Medication",
+				"fieldtype": "Check",
+				"insert_after": "item_group",
+				"default": "0",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "custom_medication_class",
+				"label": "Medication Class",
+				"fieldtype": "Link",
+				"insert_after": "custom_is_medication",
+				"options": "Medication Class",
+				"depends_on": "eval:doc.custom_is_medication",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "custom_strength",
+				"label": "Strength",
+				"fieldtype": "Data",
+				"insert_after": "custom_medication_class",
+				"depends_on": "eval:doc.custom_is_medication",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "custom_strength_uom",
+				"label": "Strength UOM",
+				"fieldtype": "Link",
+				"insert_after": "custom_strength",
+				"options": "UOM",
+				"depends_on": "eval:doc.custom_is_medication",
+				"reqd": 0,
+				"hidden": 0,
+			},
+			{
+				"fieldname": "custom_dosage_form",
+				"label": "Dosage Form",
+				"fieldtype": "Link",
+				"insert_after": "custom_strength_uom",
+				"options": "Dosage Form",
+				"depends_on": "eval:doc.custom_is_medication",
+				"reqd": 0,
+				"hidden": 0,
+			},
 		]
 	}

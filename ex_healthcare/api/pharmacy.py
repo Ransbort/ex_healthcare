@@ -8,19 +8,46 @@ from frappe import _
 
 
 @frappe.whitelist()
-def get_pos_medications():
+def get_pharmacy_settings():
+	return {
+		"item_group": frappe.db.get_single_value(
+			"Ex Healthcare Settings", "pharmacy_item_group"
+		)
+	}
+
+
+@frappe.whitelist()
+def set_pharmacy_item_group(item_group):
+	if not frappe.db.exists("Item Group", item_group):
+		frappe.throw(_("Item Group {0} does not exist").format(item_group))
+
+	frappe.db.set_single_value(
+		"Ex Healthcare Settings", "pharmacy_item_group", item_group
+	)
+	frappe.db.commit()
+
+
+@frappe.whitelist()
+def get_pos_medications(item_group=None):
 	"""
 	Single optimized call for the Pharmacy POS grid.
 
 	Two sources, unioned:
 	1. Medication -> Medication Linked Item -> Item (prescription-linked drugs,
 	   richest metadata straight from the Medication doctype)
-	2. Item where item_group = "Pharmacy" and not already covered by #1
-	   (walk-in/OTC sales - no consultation or prescription required).
-	   custom_is_medication distinguishes an actual drug (paracetamol,
-	   amoxicillin) from a non-drug Pharmacy item (gloves, syringes,
-	   cotton, bandages) so the frontend can style them differently.
+	2. Item where item_group = <configured Pharmacy Item Group> and not
+	   already covered by #1 (walk-in/OTC sales - no consultation or
+	   prescription required). custom_is_medication distinguishes an actual
+	   drug (paracetamol, amoxicillin) from a non-drug Pharmacy item (gloves,
+	   syringes, cotton, bandages) so the frontend can style them differently.
 	"""
+
+	item_group = item_group or frappe.db.get_single_value(
+		"Ex Healthcare Settings", "pharmacy_item_group"
+	)
+
+	if not item_group:
+		frappe.throw(_("Pharmacy Item Group is not configured. Please set it up first."))
 
 	medications = frappe.db.sql(
 		"""
@@ -119,11 +146,11 @@ def get_pos_medications():
 			GROUP BY item_code
 		) stock
 			ON stock.item_code = item.item_code
-		WHERE item.item_group = 'Pharmacy'
+		WHERE item.item_group = %(item_group)s
 			AND item.disabled = 0
 		ORDER BY item.item_name ASC
 		""",
-		{"price_list": default_price_list},
+		{"price_list": default_price_list, "item_group": item_group},
 		as_dict=True,
 	)
 
@@ -152,6 +179,7 @@ def get_pos_medications():
 		)
 
 	return result
+
 
 @frappe.whitelist()
 def get_item_by_barcode(barcode):

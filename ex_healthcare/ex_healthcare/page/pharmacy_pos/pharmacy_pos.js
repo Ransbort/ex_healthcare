@@ -21,6 +21,7 @@ class PharmacyPOS {
     this.view_mode = 'grid';
     this.item_group = null;
     this.load_view_preference();
+	this.setup_notifications();
     
     this.init();
 	}
@@ -56,6 +57,38 @@ class PharmacyPOS {
 			frappe.msgprint(__('Failed to load Pharmacy POS configuration'));
 			console.error(error);
 		}
+	}
+
+	setup_notifications() {
+	    this.notificationSound = new Audio('/assets/ex_healthcare/sounds/notify.mp3');
+	    this.audioUnlocked = false;
+	
+	    const unlockAudio = () => {
+	        if (this.audioUnlocked) return;
+	        this.notificationSound.play().then(() => {
+	            this.notificationSound.pause();
+	            this.notificationSound.currentTime = 0;
+	            this.audioUnlocked = true;
+	        }).catch(() => {});
+	    };
+	    document.addEventListener('click', unlockAudio, { once: true });
+	    document.addEventListener('keydown', unlockAudio, { once: true });
+	
+	    frappe.realtime.on('queue_update', (data) => {
+	        if (data.department !== 'pharmacy') return;
+	
+	        try {
+	            this.notificationSound.currentTime = 0;
+	            this.notificationSound.play().catch(() => {});
+	        } catch (e) {
+	            console.warn('Notification sound error:', e);
+	        }
+	
+	        frappe.show_alert({
+	            message: data.message,
+	            indicator: 'blue'
+	        }, 6);
+	    });
 	}
 
 	render_setup_screen() {

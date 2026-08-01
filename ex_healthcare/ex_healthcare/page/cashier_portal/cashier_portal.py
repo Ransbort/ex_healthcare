@@ -198,6 +198,85 @@ def _get_payment_history(party_id, party_type):
 
     return payments
 
+def _attach_party_names(rows, id_field, doctype):
+	"""Sales Order doesn't carry patient_name (only custom_patient, the
+	Patient ID) - so for pharmacy orders we need a second lookup to turn
+	those IDs into display names. Sales Invoice already has patient_name
+	and customer_name as real fields, so this is a no-op for those rows
+	(id_field won't be missing there), it's really just for the pharmacy
+	order case below.
+	"""
+	ids = list({r.get(id_field) for r in rows if r.get(id_field)})
+	if not ids:
+		return rows
+	names = frappe.db.get_all(
+		doctype,
+		filters={"name": ["in", ids]},
+		fields=["name", "patient_name" if doctype == "Patient" else "customer_name"],
+	)
+	name_map = {n["name"]: n.get("patient_name") or n.get("customer_name") for n in names}
+	for r in rows:
+		if r.get(id_field):
+			r["party_display_name"] = name_map.get(r[id_field], r[id_field])
+	return rows
+
+
+@frappe.whitelist()
+def get_all_pending_payments():
+	"""Global (not party-scoped) view of every outstanding invoice/order,
+	bucketed the same way as get_patient_data/get_customer_data, so the
+	cashier can work a queue without knowing who to search for first.
+	"""
+	base_invoice_fields = [
+		"name", "posting_date", "due_date", "status",
+		"outstanding_amount", "grand_total", "currency",
+		"patient", "patient_name", "customer", "customer_name",
+	]
+
+	other_invoices = frappe.get_all(
+		"Sales Invoice",
+		filters={
+			"docstatus": 1,
+			"outstanding_amount": [">", 0],
+			DEPARTMENT_FIELD: ["in", ["", "Other", None]],
+		},
+		fields=base_invoice_fields,
+		order_by="posting_date desc",
+	)
+
+	laboratory_invoices = frappe.get_all(
+		"Sales Invoice",
+		filters={"docstatus": 1, "outstanding_amount": [">", 0], DEPARTMENT_FIELD: "Laboratory"},
+		fields=base_invoice_fields,
+		order_by="posting_date desc",
+	)
+
+	rehabilitation_invoices = frappe.get_all(
+		"Sales Invoice",
+		filters={"docstatus": 1, "outstanding_amount": [">", 0], DEPARTMENT_FIELD: "Rehabilitation"},
+		fields=base_invoice_fields,
+		order_by="posting_date desc",
+	)
+
+	pharmacy_orders = frappe.get_all(
+		"Sales Order",
+		filters={"docstatus": 1, DEPARTMENT_FIELD: "Pharmacy", "per_billed": ["<", 100]},
+		fields=[
+			"name", "transaction_date as date", "delivery_date",
+			"per_billed", "grand_total", "currency",
+			"customer", "customer_name", "custom_patient",
+		],
+		order_by="transaction_date desc",
+	)
+	pharmacy_orders = _attach_party_names(pharmacy_orders, "custom_patient", "Patient")
+
+	return {
+		"other_invoices": other_invoices,
+		"laboratory_invoices": laboratory_invoices,
+		"rehabilitation_invoices": rehabilitation_invoices,
+		"pharmacy_orders": pharmacy_orders,
+	}
+
 
 @frappe.whitelist()
 def get_invoice_items(invoice_name, doctype="Sales Invoice"):

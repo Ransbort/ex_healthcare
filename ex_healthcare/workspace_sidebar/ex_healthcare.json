@@ -35,22 +35,9 @@
     "parentfield": "items",
     "parenttype": "Workspace Sidebar"
   },
-  {
-    "doctype": "Workspace Sidebar Item",
-    "idx": 3,
-    "type": "Link",
-    "icon": "calendar-fold",
-    "label": "Outpatient",
-    "link_to": "Outpatient Record",
-    "link_type": "DocType",
-    "child": 0,
-    "parent": "Ex Healthcare",
-    "parentfield": "items",
-    "parenttype": "Workspace Sidebar"
-  },
     {
     "doctype": "Workspace Sidebar Item",
-    "idx": 5,
+    "idx": 3,
     "type": "Link",
     "icon": "users-round",
     "label": "Patient",
@@ -63,7 +50,7 @@
   },
   {
     "doctype": "Workspace Sidebar Item",
-    "idx": 5,
+    "idx": 4,
     "type": "Link",
     "icon": "file-text",
     "label": "Patient Encounter",
@@ -78,7 +65,7 @@
     "doctype": "Workspace Sidebar Item",
     "idx": 5,
     "type": "Link",
-    "icon": "file-text",
+    "icon": "calendar-fold",
     "label": "Patient Appointment",
     "link_to": "Patient Appointment",
     "link_type": "DocType",

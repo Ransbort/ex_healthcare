@@ -52,6 +52,9 @@ doc_events = {
 	"Payment Entry": {
         "on_submit": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_payment_entry_submit"
     },
+	"Medication Request": {
+		"on_submit": "ex_healthcare.api.pharmacy.notify_new_medication_request"
+	}
     # remove/replace the old Sales Invoice on_update entry if present
 }
 

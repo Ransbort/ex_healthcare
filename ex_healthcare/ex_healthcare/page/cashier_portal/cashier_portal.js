@@ -644,12 +644,14 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     </h4>
                     <p style="margin: 5px 0 0 0; color: #6c757d; font-size: 0.85rem;">Cashier Portal - Ex Healthcare</p>
                 </div>
-                <button class="btn btn-primary" id="view-transactions-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px 20px; font-weight: 600;">
-                    <i class="fa fa-list-alt"></i> View Daily Transactions
-                </button>
-                <button class="btn btn-primary" id="all-pending-btn" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border: none; padding: 10px 20px; font-weight: 600; margin-left: 10px;">
-                    <i class="fa fa-clock-o"></i> All Pending Payments
-                </button>
+                <div>
+                    <button class="btn btn-primary" id="view-transactions-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px 20px; font-weight: 600;">
+                        <i class="fa fa-list-alt"></i> View Daily Transactions
+                    </button>
+                    <button class="btn btn-primary" id="all-pending-btn" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border: none; padding: 10px 20px; font-weight: 600; margin-left: 10px;">
+                        <i class="fa fa-clock-o"></i> All Pending Payments
+                    </button>
+                </div>
             </div>
 
             <div class="search-section">
@@ -743,6 +745,40 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     <div id="payments-container"></div>
                 </div>
             </div>
+
+            <!-- All Pending Payments Section -->
+            <div class="pending-payments-section" id="pending-payments-section" style="display: none;">
+                <div class="patient-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h5 style="margin: 0;"><i class="fa fa-clock-o"></i> All Pending Payments</h5>
+                        <button class="btn btn-default btn-sm" id="pending-refresh-btn">
+                            <i class="fa fa-refresh"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="tab-navigation">
+                        <button class="tab-button active" data-pending-tab="other">
+                            <i class="fa fa-file-text"></i> Other
+                            <span class="badge badge-warning" id="pending-other-count">0</span>
+                        </button>
+                        <button class="tab-button" data-pending-tab="pharmacy">
+                            <i class="fa fa-medkit"></i> Pharmacy
+                            <span class="badge badge-info" id="pending-pharmacy-count">0</span>
+                        </button>
+                        <button class="tab-button" data-pending-tab="laboratory">
+                            <i class="fa fa-flask"></i> Laboratory
+                            <span class="badge badge-info" id="pending-laboratory-count">0</span>
+                        </button>
+                        <button class="tab-button" data-pending-tab="rehabilitation">
+                            <i class="fa fa-heartbeat"></i> Rehabilitation
+                            <span class="badge badge-info" id="pending-rehabilitation-count">0</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="tab-content active" id="pending-other-tab"><div id="pending-other-container"></div></div>
+                <div class="tab-content" id="pending-pharmacy-tab"><div id="pending-pharmacy-container"></div></div>
+                <div class="tab-content" id="pending-laboratory-tab"><div id="pending-laboratory-container"></div></div>
+                <div class="tab-content" id="pending-rehabilitation-tab"><div id="pending-rehabilitation-container"></div></div>
+            </div>
         </div>
     `;
 
@@ -775,7 +811,21 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
 
     // All Pending Payments button handler
     page.main.find('#all-pending-btn').on('click', function() {
-        showAllPendingPaymentsDialog();
+        toggleAllPendingPaymentsSection();
+    });
+
+    // Tab switching within the All Pending Payments section
+    page.main.find('.tab-button[data-pending-tab]').on('click', function() {
+        const tab = $(this).data('pending-tab');
+        page.main.find('#pending-payments-section .tab-button').removeClass('active');
+        $(this).addClass('active');
+        page.main.find('#pending-payments-section .tab-content').removeClass('active');
+        page.main.find(`#pending-${tab}-tab`).addClass('active');
+    });
+
+    // Refresh button inside the All Pending Payments section
+    page.main.find('#pending-refresh-btn').on('click', function() {
+        loadAllPendingPayments();
     });
 
     // Create search type field
@@ -868,14 +918,14 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     page.main.find('[data-fieldname="patient_id"]').show();
 
     // Tab switching functionality
-    page.main.find('.tab-button').on('click', function() {
+    page.main.find('.tab-button[data-tab]').on('click', function() {
         const tabName = $(this).data('tab');
         
         // Update active states
-        page.main.find('.tab-button').removeClass('active');
+        page.main.find('.details-section .tab-button').removeClass('active');
         $(this).addClass('active');
         
-        page.main.find('.tab-content').removeClass('active');
+        page.main.find('.details-section .tab-content').removeClass('active');
         page.main.find(`#${tabName}-tab`).addClass('active');
 
         // Show/hide summary toggle only on payments tab
@@ -1156,9 +1206,9 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     page.main.find('.details-section').slideDown();
                     
                     // Reset to other invoices tab
-                    page.main.find('.tab-button').removeClass('active');
-                    page.main.find('.tab-button[data-tab="other-invoices"]').addClass('active');
-                    page.main.find('.tab-content').removeClass('active');
+                    page.main.find('.details-section .tab-button').removeClass('active');
+                    page.main.find('.details-section .tab-button[data-tab="other-invoices"]').addClass('active');
+                    page.main.find('.details-section .tab-content').removeClass('active');
                     page.main.find('#other-invoices-tab').addClass('active');
                     page.main.find('#summary-toggle-container').hide();
                     
@@ -1200,9 +1250,9 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     page.main.find('.details-section').slideDown();
                     
                     // Reset to other invoices tab
-                    page.main.find('.tab-button').removeClass('active');
-                    page.main.find('.tab-button[data-tab="other-invoices"]').addClass('active');
-                    page.main.find('.tab-content').removeClass('active');
+                    page.main.find('.details-section .tab-button').removeClass('active');
+                    page.main.find('.details-section .tab-button[data-tab="other-invoices"]').addClass('active');
+                    page.main.find('.details-section .tab-content').removeClass('active');
                     page.main.find('#other-invoices-tab').addClass('active');
                     page.main.find('#summary-toggle-container').hide();
                     
@@ -1925,136 +1975,93 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
         });
     }
 
-    function showAllPendingPaymentsDialog() {
-        const dialog = new frappe.ui.Dialog({
-            title: __('All Pending Payments'),
-            size: 'extra-large',
-            fields: [
-                {
-                    fieldtype: 'HTML',
-                    fieldname: 'pending_tabs_section',
-                    options: `
-                        <div class="tab-navigation" style="margin-bottom: 15px;">
-                            <button class="tab-button active" data-pending-tab="other">
-                                <i class="fa fa-file-text"></i> Other
-                                <span class="badge badge-warning" id="pending-other-count">0</span>
-                            </button>
-                            <button class="tab-button" data-pending-tab="pharmacy">
-                                <i class="fa fa-medkit"></i> Pharmacy
-                                <span class="badge badge-info" id="pending-pharmacy-count">0</span>
-                            </button>
-                            <button class="tab-button" data-pending-tab="laboratory">
-                                <i class="fa fa-flask"></i> Laboratory
-                                <span class="badge badge-info" id="pending-laboratory-count">0</span>
-                            </button>
-                            <button class="tab-button" data-pending-tab="rehabilitation">
-                                <i class="fa fa-heartbeat"></i> Rehabilitation
-                                <span class="badge badge-info" id="pending-rehabilitation-count">0</span>
-                            </button>
-                        </div>
-                        <div class="tab-content active" id="pending-other-tab"><div id="pending-other-container"></div></div>
-                        <div class="tab-content" id="pending-pharmacy-tab"><div id="pending-pharmacy-container"></div></div>
-                        <div class="tab-content" id="pending-laboratory-tab"><div id="pending-laboratory-container"></div></div>
-                        <div class="tab-content" id="pending-rehabilitation-tab"><div id="pending-rehabilitation-container"></div></div>
-                    `
-                }
-            ],
-            secondary_action_label: __('Refresh'),
-            secondary_action: function() {
-                loadAllPendingPayments(dialog);
+    // Toggle the inline All Pending Payments section
+    function toggleAllPendingPaymentsSection() {
+        const section = page.main.find('#pending-payments-section');
+        if (section.is(':visible')) {
+            section.hide();
+        } else {
+            section.show();
+            loadAllPendingPayments();
+        }
+    }
+
+    function loadAllPendingPayments() {
+        frappe.call({
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_all_pending_payments',
+            freeze: true,
+            freeze_message: __('Loading pending payments...'),
+            callback: function(r) {
+                if (!r.message) return;
+                renderPendingBucket('other', r.message.other_invoices, 'invoice');
+                renderPendingBucket('laboratory', r.message.laboratory_invoices, 'invoice');
+                renderPendingBucket('rehabilitation', r.message.rehabilitation_invoices, 'invoice');
+                renderPendingBucket('pharmacy', r.message.pharmacy_orders, 'pharmacy_order');
             }
         });
+    }
 
-        dialog.show();
+    function renderPendingBucket(bucketName, rows, docType) {
+        const container = page.main.find(`#pending-${bucketName}-container`);
+        container.empty();
+        page.main.find(`#pending-${bucketName}-count`).text(rows.length);
 
-        // Tab switching inside this dialog specifically
-        dialog.$wrapper.find('.tab-button').on('click', function() {
-            const tab = $(this).data('pending-tab');
-            dialog.$wrapper.find('.tab-button').removeClass('active');
-            $(this).addClass('active');
-            dialog.$wrapper.find('.tab-content').removeClass('active');
-            dialog.$wrapper.find(`#pending-${tab}-tab`).addClass('active');
-        });
-
-        loadAllPendingPayments(dialog);
-
-        function loadAllPendingPayments(dialog) {
-            frappe.call({
-                method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_all_pending_payments',
-                freeze: true,
-                freeze_message: __('Loading pending payments...'),
-                callback: function(r) {
-                    if (!r.message) return;
-                    renderPendingBucket(dialog, 'other', r.message.other_invoices, 'invoice');
-                    renderPendingBucket(dialog, 'laboratory', r.message.laboratory_invoices, 'invoice');
-                    renderPendingBucket(dialog, 'rehabilitation', r.message.rehabilitation_invoices, 'invoice');
-                    renderPendingBucket(dialog, 'pharmacy', r.message.pharmacy_orders, 'pharmacy_order');
-                }
-            });
+        if (rows.length === 0) {
+            container.html(`
+                <div class="empty-state success">
+                    <i class="fa fa-check-circle"></i>
+                    <h5>All Clear</h5>
+                    <p>No pending items in this category.</p>
+                </div>
+            `);
+            return;
         }
 
-        function renderPendingBucket(dialog, bucketName, rows, docType) {
-            const container = dialog.$wrapper.find(`#pending-${bucketName}-container`);
-            container.empty();
-            dialog.$wrapper.find(`#pending-${bucketName}-count`).text(rows.length);
+        rows.forEach(function(row) {
+            const isOrder = docType === 'pharmacy_order';
+            const entityName = isOrder
+                ? (row.party_display_name || row.customer_name || row.customer)
+                : (row.patient_name || row.customer_name || row.patient || row.customer);
 
-            if (rows.length === 0) {
-                container.html(`
-                    <div class="empty-state success">
-                        <i class="fa fa-check-circle"></i>
-                        <h5>All Clear</h5>
-                        <p>No pending items in this category.</p>
-                    </div>
-                `);
-                return;
-            }
+            const amount = isOrder ? row.grand_total : row.outstanding_amount;
+            const dateVal = isOrder ? row.date : row.posting_date;
 
-            rows.forEach(function(row) {
-                const isOrder = docType === 'pharmacy_order';
-                const entityName = isOrder
-                    ? (row.party_display_name || row.customer_name || row.customer)
-                    : (row.patient_name || row.customer_name || row.patient || row.customer);
-
-                const amount = isOrder ? row.grand_total : row.outstanding_amount;
-                const dateVal = isOrder ? row.date : row.posting_date;
-
-                const card = $(`
-                    <div class="invoice-card">
-                        <div class="card-row">
-                            <div class="card-left">
-                                <div class="card-id-section">
-                                    <div class="card-id">${row.name}</div>
-                                    <div class="card-type">${entityName}</div>
-                                </div>
-                                <div class="card-info">
-                                    <div class="info-item">
-                                        <span class="info-item-label">Date</span>
-                                        <span class="info-item-value">${frappe.datetime.str_to_user(dateVal)}</span>
-                                    </div>
-                                </div>
+            const card = $(`
+                <div class="invoice-card">
+                    <div class="card-row">
+                        <div class="card-left">
+                            <div class="card-id-section">
+                                <div class="card-id">${row.name}</div>
+                                <div class="card-type">${entityName}</div>
                             </div>
-                            <div class="card-right">
-                                <div class="card-amount">
-                                    <div class="amount-label-small">${isOrder ? 'Total' : 'Outstanding'}</div>
-                                    <div class="amount-value-large">${format_currency(amount, row.currency)}</div>
+                            <div class="card-info">
+                                <div class="info-item">
+                                    <span class="info-item-label">Date</span>
+                                    <span class="info-item-value">${frappe.datetime.str_to_user(dateVal)}</span>
                                 </div>
-                                <button class="btn btn-success btn-pay">
-                                    <i class="fa fa-money"></i> Pay
-                                </button>
                             </div>
                         </div>
+                        <div class="card-right">
+                            <div class="card-amount">
+                                <div class="amount-label-small">${isOrder ? 'Total' : 'Outstanding'}</div>
+                                <div class="amount-value-large">${format_currency(amount, row.currency)}</div>
+                            </div>
+                            <button class="btn btn-success btn-pay">
+                                <i class="fa fa-money"></i> Pay
+                            </button>
+                        </div>
                     </div>
-                `);
+                </div>
+            `);
 
-                card.find('.btn-pay').on('click', function() {
-                    showPaymentDialog(row, docType, page, entityName, function() {
-                        loadAllPendingPayments(dialog);
-                    });
+            card.find('.btn-pay').on('click', function() {
+                showPaymentDialog(row, docType, page, entityName, function() {
+                    loadAllPendingPayments();
                 });
-
-                container.append(card);
             });
-        }
+
+            container.append(card);
+        });
     }
 
     // Show Daily Transactions Dialog

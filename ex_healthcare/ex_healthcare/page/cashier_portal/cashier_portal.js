@@ -644,13 +644,12 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                     </h4>
                     <p style="margin: 5px 0 0 0; color: #6c757d; font-size: 0.85rem;">Cashier Portal - Ex Healthcare</p>
                 </div>
-				
-				<button class="btn btn-primary" id="view-transactions-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px 20px; font-weight: 600;">
-				    <i class="fa fa-list-alt"></i> View Daily Transactions
-				</button>
-				<button class="btn btn-primary" id="all-pending-btn" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border: none; padding: 10px 20px; font-weight: 600; margin-left: 10px;">
-				    <i class="fa fa-clock-o"></i> All Pending Payments
-				</button>
+                <button class="btn btn-primary" id="view-transactions-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px 20px; font-weight: 600;">
+                    <i class="fa fa-list-alt"></i> View Daily Transactions
+                </button>
+                <button class="btn btn-primary" id="all-pending-btn" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border: none; padding: 10px 20px; font-weight: 600; margin-left: 10px;">
+                    <i class="fa fa-clock-o"></i> All Pending Payments
+                </button>
             </div>
 
             <div class="search-section">
@@ -774,10 +773,10 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
         showDailyTransactionsDialog();
     });
 
-	// View All Pending Transactions button handler
-	page.main.find('#all-pending-btn').on('click', function() {
-	    showAllPendingPaymentsDialog();
-	});
+    // All Pending Payments button handler
+    page.main.find('#all-pending-btn').on('click', function() {
+        showAllPendingPaymentsDialog();
+    });
 
     // Create search type field
     let search_type_field = frappe.ui.form.make_control({
@@ -1653,37 +1652,37 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
     }
 
     // Show payment dialog
-    function showPaymentDialog(doc, type, page) {
+    function showPaymentDialog(doc, type, page, entityNameOverride, onSuccessCallback) {
         // Get available payment methods
-        function showPaymentDialog(doc, type, page, entityNameOverride, onSuccessCallback) {
-    frappe.call({
-        method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_payment_methods',
-        callback: function(r) {
-            const payment_methods = r.message || [];
-
-            if (payment_methods.length === 0) {
-                frappe.show_alert({
-                    message: __('No payment methods configured. Please configure payment methods first.'),
-                    indicator: 'red'
-                });
-                return;
-            }
-
-            const isPharmacyOrder = type === 'pharmacy_order';
-            const amount = doc.outstanding_amount || doc.grand_total;
-
-            let docLabel = 'Invoice';
-            let iconClass = 'file-text';
-            // Falls back to the old DOM-scrape only when no explicit name is
-            // passed in - keeps the existing search-view call sites working
-            // unchanged, while the new All Pending dialog supplies its own.
-            let entityName = entityNameOverride || page.main.find('#info-display .info-value').first().text();
-
-            if (isPharmacyOrder) {
-                docLabel = 'Pharmacy Order';
-                iconClass = 'medkit';
-            }
-            // ...rest of the function is unchanged until primary_action...
+        frappe.call({
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_payment_methods',
+            callback: function(r) {
+                const payment_methods = r.message || [];
+                
+                if (payment_methods.length === 0) {
+                    frappe.show_alert({
+                        message: __('No payment methods configured. Please configure payment methods first.'),
+                        indicator: 'red'
+                    });
+                    return;
+                }
+                
+                // Only pharmacy_order needs special handling
+                const isPharmacyOrder = type === 'pharmacy_order';
+                const amount = doc.outstanding_amount || doc.grand_total;
+                
+                // Get document label and icon
+                let docLabel = 'Invoice';
+                let iconClass = 'file-text';
+                // Falls back to the old DOM-scrape only when no explicit name is
+                // passed in - keeps the existing search-view call sites working
+                // unchanged, while the new All Pending dialog supplies its own.
+                let entityName = entityNameOverride || page.main.find('#info-display .info-value').first().text();
+                
+                if (isPharmacyOrder) {
+                    docLabel = 'Pharmacy Order';
+                    iconClass = 'medkit';
+                }
                 
                 const dialog = new frappe.ui.Dialog({
                     title: __('Process Payment'),
@@ -1777,7 +1776,7 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                             }
                         }
 
-						dialog.hide();
+                        dialog.hide();
 
                         const afterSuccess = onSuccessCallback || function() {
                             if (currentSearchType === 'Patient') {
@@ -1790,8 +1789,10 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                         };
 
                         if (isPharmacyOrder) {
+                            // Only pharmacy orders create invoice+payment+delivery
                             processDepartmentPayment(doc.name, values, type, page, afterSuccess);
                         } else {
+                            // All other invoices (Other, Lab, Rehab) use direct payment
                             processInvoicePayment(doc.name, values, page, afterSuccess);
                         }
                     },
@@ -1806,126 +1807,98 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
         });
     }
 
-	// Process invoice payment (regular sales invoice)
-	function processInvoicePayment(invoice_name, values, page, afterSuccess) {
-	    frappe.call({
-	        method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.create_payment_entry',
-	        args: {
-	            invoice_name: invoice_name,
-	            mode_of_payment: values.mode_of_payment,
-	            remarks: values.remarks || null,
-	            reference_no: values.reference_no || null,
-	            reference_date: values.reference_date || null
-	        },
-	        freeze: true,
-	        freeze_message: __('Processing payment...'),
-	        callback: function(r) {
-	            if (r.message && r.message.status === 'Success') {
-	                frappe.show_alert({
-	                    message: __('Payment processed successfully! Payment Entry: {0}', [r.message.name]),
-	                    indicator: 'green'
-	                }, 10);
-	
-	                // Ask if they want to print receipt
-	                frappe.confirm(
-	                    __('Payment successful! Would you like to print the receipt?'),
-	                    function() {
-	                        printPaymentReceipt(r.message.name);
-	                    }
-	                );
-	
-	                // Reload data - uses the caller-supplied callback when
-	                // provided (e.g. the All Pending Payments dialog refreshing
-	                // its own list), otherwise falls back to reloading whichever
-	                // party is currently loaded in the search view.
-	                setTimeout(() => {
-	                    if (afterSuccess) {
-	                        afterSuccess();
-	                    } else if (currentSearchType === 'Patient') {
-	                        const patient_id = patient_field.get_value();
-	                        if (patient_id) {
-	                            loadPatientData(patient_id, page);
-	                        }
-	                    } else {
-	                        const customer_id = customer_field.get_value();
-	                        if (customer_id) {
-	                            loadCustomerData(customer_id, page);
-	                        }
-	                    }
-	                }, 1500);
-	            }
-	        },
-	        error: function(r) {
-	            frappe.show_alert({
-	                message: r.message || __('Error processing payment'),
-	                indicator: 'red'
-	            }, 10);
-	        }
-	    });
-	}
-	
-	// Process department payment (pharmacy - create invoice from order + payment + delivery note)
-	function processDepartmentPayment(order_name, values, type, page, afterSuccess) {
-	    frappe.call({
-	        method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.create_invoice_and_payment_from_order',
-	        args: {
-	            order_name: order_name,
-	            mode_of_payment: values.mode_of_payment,
-	            remarks: values.remarks || null,
-	            reference_no: values.reference_no || null,
-	            reference_date: values.reference_date || null
-	        },
-	        freeze: true,
-	        freeze_message: __('Creating invoice, payment, and delivery note...'),
-	        callback: function(r) {
-	            if (r.message && r.message.status === 'Success') {
-	                // Show success message with all created documents
-	                let message = __('Payment processed successfully!<br>');
-	                message += __('Invoice: {0}<br>', [r.message.invoice_name]);
-	                message += __('Payment: {0}<br>', [r.message.payment_name]);
-	                message += __('Delivery Note: {0}', [r.message.delivery_note_name]);
-	                
-	                frappe.show_alert({
-	                    message: message,
-	                    indicator: 'green'
-	                }, 15);
-	
-	                // Ask if they want to print receipt
-	                frappe.confirm(
-	                    __('Payment successful! Would you like to print the receipt?'),
-	                    function() {
-	                        printPaymentReceipt(r.message.payment_name);
-	                    }
-	                );
-	
-	                // Reload data - same afterSuccess fallback pattern as
-	                // processInvoicePayment above.
-	                setTimeout(() => {
-	                    if (afterSuccess) {
-	                        afterSuccess();
-	                    } else if (currentSearchType === 'Patient') {
-	                        const patient_id = patient_field.get_value();
-	                        if (patient_id) {
-	                            loadPatientData(patient_id, page);
-	                        }
-	                    } else {
-	                        const customer_id = customer_field.get_value();
-	                        if (customer_id) {
-	                            loadCustomerData(customer_id, page);
-	                        }
-	                    }
-	                }, 1500);
-	            }
-	        },
-	        error: function(r) {
-	            frappe.show_alert({
-	                message: r.message || __('Error creating invoice, payment, and delivery note'),
-	                indicator: 'red'
-	            }, 10);
-	        }
-	    });
-	}
-		
+    // Process invoice payment (regular sales invoice)
+    function processInvoicePayment(invoice_name, values, page, afterSuccess) {
+        frappe.call({
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.create_payment_entry',
+            args: {
+                invoice_name: invoice_name,
+                mode_of_payment: values.mode_of_payment,
+                remarks: values.remarks || null,
+                reference_no: values.reference_no || null,
+                reference_date: values.reference_date || null
+            },
+            freeze: true,
+            freeze_message: __('Processing payment...'),
+            callback: function(r) {
+                if (r.message && r.message.status === 'Success') {
+                    frappe.show_alert({
+                        message: __('Payment processed successfully! Payment Entry: {0}', [r.message.name]),
+                        indicator: 'green'
+                    }, 10);
+
+                    // Ask if they want to print receipt
+                    frappe.confirm(
+                        __('Payment successful! Would you like to print the receipt?'),
+                        function() {
+                            printPaymentReceipt(r.message.name);
+                        }
+                    );
+
+                    // Reload data
+                    setTimeout(() => {
+                        if (afterSuccess) afterSuccess();
+                    }, 1500);
+                }
+            },
+            error: function(r) {
+                frappe.show_alert({
+                    message: r.message || __('Error processing payment'),
+                    indicator: 'red'
+                }, 10);
+            }
+        });
+    }
+
+    // Process department payment (pharmacy - create invoice from order + payment + delivery note)
+    function processDepartmentPayment(order_name, values, type, page, afterSuccess) {
+        frappe.call({
+            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.create_invoice_and_payment_from_order',
+            args: {
+                order_name: order_name,
+                mode_of_payment: values.mode_of_payment,
+                remarks: values.remarks || null,
+                reference_no: values.reference_no || null,
+                reference_date: values.reference_date || null
+            },
+            freeze: true,
+            freeze_message: __('Creating invoice, payment, and delivery note...'),
+            callback: function(r) {
+                if (r.message && r.message.status === 'Success') {
+                    // Show success message with all created documents
+                    let message = __('Payment processed successfully!<br>');
+                    message += __('Invoice: {0}<br>', [r.message.invoice_name]);
+                    message += __('Payment: {0}<br>', [r.message.payment_name]);
+                    message += __('Delivery Note: {0}', [r.message.delivery_note_name]);
+                    
+                    frappe.show_alert({
+                        message: message,
+                        indicator: 'green'
+                    }, 15);
+
+                    // Ask if they want to print receipt
+                    frappe.confirm(
+                        __('Payment successful! Would you like to print the receipt?'),
+                        function() {
+                            printPaymentReceipt(r.message.payment_name);
+                        }
+                    );
+
+                    // Reload data
+                    setTimeout(() => {
+                        if (afterSuccess) afterSuccess();
+                    }, 1500);
+                }
+            },
+            error: function(r) {
+                frappe.show_alert({
+                    message: r.message || __('Error creating invoice, payment, and delivery note'),
+                    indicator: 'red'
+                }, 10);
+            }
+        });
+    }
+
     // Print payment receipt
     function printPaymentReceipt(payment_name) {
         frappe.call({
@@ -1950,6 +1923,138 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
                 frappe.utils.print('Payment Entry', payment_name);
             }
         });
+    }
+
+    function showAllPendingPaymentsDialog() {
+        const dialog = new frappe.ui.Dialog({
+            title: __('All Pending Payments'),
+            size: 'extra-large',
+            fields: [
+                {
+                    fieldtype: 'HTML',
+                    fieldname: 'pending_tabs_section',
+                    options: `
+                        <div class="tab-navigation" style="margin-bottom: 15px;">
+                            <button class="tab-button active" data-pending-tab="other">
+                                <i class="fa fa-file-text"></i> Other
+                                <span class="badge badge-warning" id="pending-other-count">0</span>
+                            </button>
+                            <button class="tab-button" data-pending-tab="pharmacy">
+                                <i class="fa fa-medkit"></i> Pharmacy
+                                <span class="badge badge-info" id="pending-pharmacy-count">0</span>
+                            </button>
+                            <button class="tab-button" data-pending-tab="laboratory">
+                                <i class="fa fa-flask"></i> Laboratory
+                                <span class="badge badge-info" id="pending-laboratory-count">0</span>
+                            </button>
+                            <button class="tab-button" data-pending-tab="rehabilitation">
+                                <i class="fa fa-heartbeat"></i> Rehabilitation
+                                <span class="badge badge-info" id="pending-rehabilitation-count">0</span>
+                            </button>
+                        </div>
+                        <div class="tab-content active" id="pending-other-tab"><div id="pending-other-container"></div></div>
+                        <div class="tab-content" id="pending-pharmacy-tab"><div id="pending-pharmacy-container"></div></div>
+                        <div class="tab-content" id="pending-laboratory-tab"><div id="pending-laboratory-container"></div></div>
+                        <div class="tab-content" id="pending-rehabilitation-tab"><div id="pending-rehabilitation-container"></div></div>
+                    `
+                }
+            ],
+            secondary_action_label: __('Refresh'),
+            secondary_action: function() {
+                loadAllPendingPayments(dialog);
+            }
+        });
+
+        dialog.show();
+
+        // Tab switching inside this dialog specifically
+        dialog.$wrapper.find('.tab-button').on('click', function() {
+            const tab = $(this).data('pending-tab');
+            dialog.$wrapper.find('.tab-button').removeClass('active');
+            $(this).addClass('active');
+            dialog.$wrapper.find('.tab-content').removeClass('active');
+            dialog.$wrapper.find(`#pending-${tab}-tab`).addClass('active');
+        });
+
+        loadAllPendingPayments(dialog);
+
+        function loadAllPendingPayments(dialog) {
+            frappe.call({
+                method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_all_pending_payments',
+                freeze: true,
+                freeze_message: __('Loading pending payments...'),
+                callback: function(r) {
+                    if (!r.message) return;
+                    renderPendingBucket(dialog, 'other', r.message.other_invoices, 'invoice');
+                    renderPendingBucket(dialog, 'laboratory', r.message.laboratory_invoices, 'invoice');
+                    renderPendingBucket(dialog, 'rehabilitation', r.message.rehabilitation_invoices, 'invoice');
+                    renderPendingBucket(dialog, 'pharmacy', r.message.pharmacy_orders, 'pharmacy_order');
+                }
+            });
+        }
+
+        function renderPendingBucket(dialog, bucketName, rows, docType) {
+            const container = dialog.$wrapper.find(`#pending-${bucketName}-container`);
+            container.empty();
+            dialog.$wrapper.find(`#pending-${bucketName}-count`).text(rows.length);
+
+            if (rows.length === 0) {
+                container.html(`
+                    <div class="empty-state success">
+                        <i class="fa fa-check-circle"></i>
+                        <h5>All Clear</h5>
+                        <p>No pending items in this category.</p>
+                    </div>
+                `);
+                return;
+            }
+
+            rows.forEach(function(row) {
+                const isOrder = docType === 'pharmacy_order';
+                const entityName = isOrder
+                    ? (row.party_display_name || row.customer_name || row.customer)
+                    : (row.patient_name || row.customer_name || row.patient || row.customer);
+
+                const amount = isOrder ? row.grand_total : row.outstanding_amount;
+                const dateVal = isOrder ? row.date : row.posting_date;
+
+                const card = $(`
+                    <div class="invoice-card">
+                        <div class="card-row">
+                            <div class="card-left">
+                                <div class="card-id-section">
+                                    <div class="card-id">${row.name}</div>
+                                    <div class="card-type">${entityName}</div>
+                                </div>
+                                <div class="card-info">
+                                    <div class="info-item">
+                                        <span class="info-item-label">Date</span>
+                                        <span class="info-item-value">${frappe.datetime.str_to_user(dateVal)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-right">
+                                <div class="card-amount">
+                                    <div class="amount-label-small">${isOrder ? 'Total' : 'Outstanding'}</div>
+                                    <div class="amount-value-large">${format_currency(amount, row.currency)}</div>
+                                </div>
+                                <button class="btn btn-success btn-pay">
+                                    <i class="fa fa-money"></i> Pay
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `);
+
+                card.find('.btn-pay').on('click', function() {
+                    showPaymentDialog(row, docType, page, entityName, function() {
+                        loadAllPendingPayments(dialog);
+                    });
+                });
+
+                container.append(card);
+            });
+        }
     }
 
     // Show Daily Transactions Dialog
@@ -2223,139 +2328,6 @@ frappe.pages['cashier-portal'].on_page_load = function(wrapper) {
             });
         }
     }
-
-	// Show All Pending Transactions Dialog
-	function showAllPendingPaymentsDialog() {
-    const dialog = new frappe.ui.Dialog({
-        title: __('All Pending Payments'),
-        size: 'extra-large',
-        fields: [
-            {
-                fieldtype: 'HTML',
-                fieldname: 'pending_tabs_section',
-                options: `
-                    <div class="tab-navigation" style="margin-bottom: 15px;">
-                        <button class="tab-button active" data-pending-tab="other">
-                            <i class="fa fa-file-text"></i> Other
-                            <span class="badge badge-warning" id="pending-other-count">0</span>
-                        </button>
-                        <button class="tab-button" data-pending-tab="pharmacy">
-                            <i class="fa fa-medkit"></i> Pharmacy
-                            <span class="badge badge-info" id="pending-pharmacy-count">0</span>
-                        </button>
-                        <button class="tab-button" data-pending-tab="laboratory">
-                            <i class="fa fa-flask"></i> Laboratory
-                            <span class="badge badge-info" id="pending-laboratory-count">0</span>
-                        </button>
-                        <button class="tab-button" data-pending-tab="rehabilitation">
-                            <i class="fa fa-heartbeat"></i> Rehabilitation
-                            <span class="badge badge-info" id="pending-rehabilitation-count">0</span>
-                        </button>
-                    </div>
-                    <div class="tab-content active" id="pending-other-tab"><div id="pending-other-container"></div></div>
-                    <div class="tab-content" id="pending-pharmacy-tab"><div id="pending-pharmacy-container"></div></div>
-                    <div class="tab-content" id="pending-laboratory-tab"><div id="pending-laboratory-container"></div></div>
-                    <div class="tab-content" id="pending-rehabilitation-tab"><div id="pending-rehabilitation-container"></div></div>
-                `
-            }
-        ],
-        secondary_action_label: __('Refresh'),
-        secondary_action: function() {
-            loadAllPendingPayments(dialog);
-        }
-    });
-
-    dialog.show();
-
-    // Tab switching inside this dialog specifically
-    dialog.$wrapper.find('.tab-button').on('click', function() {
-        const tab = $(this).data('pending-tab');
-        dialog.$wrapper.find('.tab-button').removeClass('active');
-        $(this).addClass('active');
-        dialog.$wrapper.find('.tab-content').removeClass('active');
-        dialog.$wrapper.find(`#pending-${tab}-tab`).addClass('active');
-    });
-
-    loadAllPendingPayments(dialog);
-
-    function loadAllPendingPayments(dialog) {
-        frappe.call({
-            method: 'ex_healthcare.ex_healthcare.page.cashier_portal.cashier_portal.get_all_pending_payments',
-            freeze: true,
-            freeze_message: __('Loading pending payments...'),
-            callback: function(r) {
-                if (!r.message) return;
-                renderPendingBucket(dialog, 'other', r.message.other_invoices, 'invoice');
-                renderPendingBucket(dialog, 'laboratory', r.message.laboratory_invoices, 'invoice');
-                renderPendingBucket(dialog, 'rehabilitation', r.message.rehabilitation_invoices, 'invoice');
-                renderPendingBucket(dialog, 'pharmacy', r.message.pharmacy_orders, 'pharmacy_order');
-            }
-        });
-    }
-
-    function renderPendingBucket(dialog, bucketName, rows, docType) {
-        const container = dialog.$wrapper.find(`#pending-${bucketName}-container`);
-        container.empty();
-        dialog.$wrapper.find(`#pending-${bucketName}-count`).text(rows.length);
-
-        if (rows.length === 0) {
-            container.html(`
-                <div class="empty-state success">
-                    <i class="fa fa-check-circle"></i>
-                    <h5>All Clear</h5>
-                    <p>No pending items in this category.</p>
-                </div>
-            `);
-            return;
-        }
-
-        rows.forEach(function(row) {
-            const isOrder = docType === 'pharmacy_order';
-            const entityName = isOrder
-                ? (row.party_display_name || row.customer_name || row.customer)
-                : (row.patient_name || row.customer_name || row.patient || row.customer);
-
-            const amount = isOrder ? row.grand_total : row.outstanding_amount;
-            const dateVal = isOrder ? row.date : row.posting_date;
-
-            const card = $(`
-                <div class="invoice-card">
-                    <div class="card-row">
-                        <div class="card-left">
-                            <div class="card-id-section">
-                                <div class="card-id">${row.name}</div>
-                                <div class="card-type">${entityName}</div>
-                            </div>
-                            <div class="card-info">
-                                <div class="info-item">
-                                    <span class="info-item-label">Date</span>
-                                    <span class="info-item-value">${frappe.datetime.str_to_user(dateVal)}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-right">
-                            <div class="card-amount">
-                                <div class="amount-label-small">${isOrder ? 'Total' : 'Outstanding'}</div>
-                                <div class="amount-value-large">${format_currency(amount, row.currency)}</div>
-                            </div>
-                            <button class="btn btn-success btn-pay">
-                                <i class="fa fa-money"></i> Pay
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `);
-
-            card.find('.btn-pay').on('click', function() {
-                showPaymentDialog(row, docType, page, entityName, function() {
-                    loadAllPendingPayments(dialog);
-                });
-            });
-
-            container.append(card);
-        });
-    }
-}
 };
             
             

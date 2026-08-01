@@ -41,7 +41,7 @@
     "type": "Link",
     "icon": "calendar-fold",
     "label": "Outpatient",
-    "link_to": "Workspace",
+    "link_to": "Outpatient",
     "link_type": "DocType",
     "child": 0,
     "parent": "Ex Healthcare",

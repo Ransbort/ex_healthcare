@@ -6,6 +6,22 @@ import json
 import frappe
 from frappe import _
 
+def _notify(event, payload):
+	frappe.publish_realtime(event=event, message=payload)
+
+
+def notify_new_medication_request(doc, method=None):
+	"""Hooked on Medication Request on_submit. Pings Pharmacy POS
+	listeners so a newly-prescribed medication shows up (with a sound)
+	without the pharmacist needing to poll or manually reload.
+	"""
+	patient_label = doc.get("patient_name") or doc.get("patient") or "Unknown patient"
+
+	_notify("queue_update", {
+		"department": "pharmacy",
+		"message": f"New prescription for {patient_label}",
+		"medication_request": doc.name,
+	})
 
 @frappe.whitelist()
 def get_pharmacy_settings():

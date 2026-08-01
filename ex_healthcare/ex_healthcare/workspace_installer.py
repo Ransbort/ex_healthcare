@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-
 import frappe
 
 
@@ -12,7 +11,6 @@ def workspace_installer():
 	# (apps/ex_healthcare/ex_healthcare/ex_healthcare/workspace/) - this
 	# was silently finding zero files and doing nothing before.
 	workspace_dir = Path(frappe.get_app_path(app_name)) / app_name / "workspace"
-
 	for workspace_file in workspace_dir.rglob("*.json"):
 		_reinstall_workspace_from_file(workspace_file)
 
@@ -20,7 +18,6 @@ def workspace_installer():
 def workspace_remover():
 	app_name = "ex_healthcare"
 	workspace_dir = Path(frappe.get_app_path(app_name)) / app_name / "workspace"
-
 	for workspace_file in workspace_dir.rglob("*.json"):
 		workspace_data = _load_workspace_data(workspace_file)
 		if not workspace_data:
@@ -34,7 +31,6 @@ def _reinstall_workspace_from_file(workspace_file: Path):
 	workspace_data = _load_workspace_data(workspace_file)
 	if not workspace_data:
 		return
-
 	workspace_name = workspace_data.get("name") or workspace_data.get("label")
 	if not workspace_name:
 		frappe.log_error(
@@ -42,7 +38,6 @@ def _reinstall_workspace_from_file(workspace_file: Path):
 			message=f"Workspace in {workspace_file} has no name or label"
 		)
 		return
-
 	_remove_workspace(workspace_name)
 	_install_workspace(workspace_data, workspace_name)
 
@@ -86,11 +81,23 @@ def _load_workspace_data(workspace_file: Path):
 		)
 		return None
 
-	if not isinstance(workspace_data, list) or not workspace_data:
+	# Accept either a bare object (the normal export shape) or a list
+	# containing a single object, so both formats work without silently
+	# no-op'ing the reinstall.
+	if isinstance(workspace_data, list):
+		if not workspace_data:
+			frappe.log_error(
+				title="Invalid Workspace Structure",
+				message=f"Workspace JSON array is empty: {workspace_file}"
+			)
+			return None
+		workspace_data = workspace_data[0]
+
+	if not isinstance(workspace_data, dict) or not workspace_data:
 		frappe.log_error(
 			title="Invalid Workspace Structure",
-			message=f"Workspace JSON must be a non-empty array: {workspace_file}"
+			message=f"Workspace JSON must be an object or a non-empty array of one object: {workspace_file}"
 		)
 		return None
 
-	return workspace_data[0]
+	return workspace_data

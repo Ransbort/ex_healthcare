@@ -46,7 +46,8 @@ role_home_page = {
 # exclusively.
 doc_events = {
 	"Patient Encounter": {
-		"on_submit": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_patient_encounter_submit"
+		"on_submit": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_patient_encounter_submit",
+		"on_update": "ex_healthcare.ex_healthcare.page.lab_portal.lab_portal.notify_new_lab_requests"
 	},
 	"Payment Entry": {
         "on_submit": "ex_healthcare.ex_healthcare.page.front_desk.front_desk.on_payment_entry_submit"

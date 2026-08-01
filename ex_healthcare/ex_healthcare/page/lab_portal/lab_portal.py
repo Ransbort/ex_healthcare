@@ -35,6 +35,31 @@ Everything else here was already verified working:
 import frappe
 from frappe import _
 from frappe.utils import today
+
+def _notify(event, payload):
+	"""Broadcast a realtime event to everyone listening in this site."""
+	frappe.publish_realtime(event=event, message=payload)
+
+
+def notify_new_lab_requests(doc, method=None):
+	"""Hooked on Patient Encounter on_submit. Pings Lab Portal listeners
+	whenever this encounter carries at least one un-invoiced lab
+	prescription, so a newly-submitted request shows up (with a sound)
+	in the Requested Labs tab without the technician manually refreshing.
+	Reuses the same 'queue_update' realtime channel as the Cashier
+	Portal - just tagged with department='laboratory' so listeners can
+	filter to only what they care about.
+	"""
+	pending_labs = [row for row in doc.get("lab_test_prescription", []) if not row.invoiced]
+	if not pending_labs:
+		return
+
+	_notify("queue_update", {
+		"department": "laboratory",
+		"message": f"New lab request(s) for {doc.patient_name} ({len(pending_labs)})",
+		"encounter": doc.name,
+	})
+
 # Correlated subquery: aggregates every diagnosis linked to an encounter
 # into one comma-separated string. `pe` must already be joined/aliased in
 # the outer query for the `pe.name` reference here to resolve.
@@ -58,6 +83,7 @@ def _lab_search_conditions(search_patient, search_encounter, search_date, date_f
 		conditions.append(f"{date_field} = %(search_date)s")
 		values["search_date"] = search_date
 	return conditions, values
+	
 @frappe.whitelist()
 def get_requested_labs(search_patient=None, search_encounter=None, search_date=None):
 	"""Lab tests prescribed on an encounter but not yet accepted/invoiced."""
@@ -87,6 +113,7 @@ def get_requested_labs(search_patient=None, search_encounter=None, search_date=N
 		values,
 		as_dict=True,
 	)
+	
 @frappe.whitelist()
 def get_pending_labs(search_patient=None, search_encounter=None, search_date=None):
 	"""Accepted (invoiced) lab tests that haven't been marked Completed yet."""
@@ -127,6 +154,7 @@ def get_pending_labs(search_patient=None, search_encounter=None, search_date=Non
 	for row in rows:
 		row["payment_status"] = "Paid" if row.pop("invoice_status", None) == "Paid" else "Unpaid"
 	return rows
+	
 @frappe.whitelist()
 def get_completed_labs(search_patient=None, search_encounter=None, filter_date=None):
 	"""Lab tests with results entered (status Completed)."""
@@ -162,6 +190,7 @@ def get_completed_labs(search_patient=None, search_encounter=None, filter_date=N
 		values,
 		as_dict=True,
 	)
+	
 @frappe.whitelist()
 def accept_lab_request(prescription_id, patient_id, encounter_id, lab_test_code):
 	"""
@@ -243,6 +272,7 @@ def accept_lab_request(prescription_id, patient_id, encounter_id, lab_test_code)
 		"invoice_name": invoice.name,
 		"lab_test_name": lab_test.name,
 	}
+	
 @frappe.whitelist()
 def get_print_formats(doctype):
 	formats = frappe.get_all(
@@ -254,6 +284,7 @@ def get_print_formats(doctype):
 	if not any(f.name == "Standard" for f in formats):
 		formats.insert(0, {"name": "Standard"})
 	return formats
+	
 @frappe.whitelist()
 def get_print_content(doctype, docname, print_format=None):
 	html = frappe.get_print(doctype, docname, print_format=print_format or None)

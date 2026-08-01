@@ -42,21 +42,28 @@ def _notify(event, payload):
 
 
 def notify_new_lab_requests(doc, method=None):
-	"""Hooked on Patient Encounter on_submit. Pings Lab Portal listeners
-	whenever this encounter carries at least one un-invoiced lab
-	prescription, so a newly-submitted request shows up (with a sound)
-	in the Requested Labs tab without the technician manually refreshing.
-	Reuses the same 'queue_update' realtime channel as the Cashier
-	Portal - just tagged with department='laboratory' so listeners can
-	filter to only what they care about.
+	"""Hooked on Patient Encounter on_update. Encounters aren't always
+	submitted (docstatus can stay 0 indefinitely in walk-in workflows),
+	so this can't rely on on_submit - it has to fire on every save and
+	diff against the pre-save state itself to avoid re-notifying on
+	unrelated re-saves of the same encounter.
 	"""
-	pending_labs = [row for row in doc.get("lab_test_prescription", []) if not row.invoiced]
-	if not pending_labs:
+	before_save = doc.get_doc_before_save()
+	old_names = set()
+	if before_save:
+		old_names = {row.name for row in before_save.get("lab_test_prescription", [])}
+
+	new_pending = [
+		row for row in doc.get("lab_test_prescription", [])
+		if not row.invoiced and row.name not in old_names
+	]
+
+	if not new_pending:
 		return
 
 	_notify("queue_update", {
 		"department": "laboratory",
-		"message": f"New lab request(s) for {doc.patient_name} ({len(pending_labs)})",
+		"message": f"New lab request(s) for {doc.patient_name} ({len(new_pending)})",
 		"encounter": doc.name,
 	})
 

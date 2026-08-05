@@ -316,7 +316,6 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			get_query: function() {
 				return {
 					filters: {
-						appointment_date: ci_date ? ci_date.get_value() : frappe.datetime.get_today(),
 						status: ['!=', 'Cancelled']
 					}
 				};

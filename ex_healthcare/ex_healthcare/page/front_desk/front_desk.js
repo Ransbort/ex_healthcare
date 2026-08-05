@@ -319,11 +319,43 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 						status: ['!=', 'Cancelled']
 					}
 				};
+			},
+			onchange: function() {
+				const name = ci_appointment.get_value();
+
+				if (!name) {
+					setAppointmentFieldsReadOnly(false);
+					ci_practitioner.set_value('');
+					ci_department.set_value('');
+					ci_appointment_type.set_value('');
+					ci_time.set_value('');
+					withServerToday(function(t) { ci_date.set_value(t); });
+					return;
+				}
+
+				frappe.db.get_doc('Patient Appointment', name).then(function(doc) {
+					ci_practitioner.set_value(doc.practitioner || '');
+					ci_department.set_value(doc.department || '');
+					ci_appointment_type.set_value(doc.appointment_type || '');
+					ci_date.set_value(doc.appointment_date || '');
+					ci_time.set_value(doc.appointment_time || '');
+					setAppointmentFieldsReadOnly(true);
+				});
 			}
 		},
 		render_input: true
 	});
 	ci_appointment.refresh();
+
+	// Locks/unlocks the fields that get auto-filled from a picked
+	// appointment, so front-desk staff can't edit values that came
+	// from the booking itself.
+	function setAppointmentFieldsReadOnly(readOnly) {
+		[ci_practitioner, ci_department, ci_appointment_type, ci_date, ci_time].forEach(function(ctrl) {
+			ctrl.df.read_only = readOnly ? 1 : 0;
+			ctrl.refresh();
+		});
+	}
 
 	let ci_practitioner = frappe.ui.form.make_control({
 		parent: page.main.find('[data-fieldname="ci_practitioner"]'),
@@ -478,7 +510,12 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			frappe.show_alert({ message: msg, indicator: r.message.invoice ? 'orange' : 'green' }, 8);
 			ci_patient.set_value('');
 			ci_appointment.set_value('');
+			ci_practitioner.set_value('');
+			ci_department.set_value('');
 			ci_appointment_type.set_value('');
+			ci_time.set_value('');
+			setAppointmentFieldsReadOnly(false);
+			withServerToday(function(t) { ci_date.set_value(t); });
 			np_first_name.set_value('');
 			np_last_name.set_value('');
 			np_mobile.set_value('');

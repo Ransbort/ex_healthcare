@@ -54,6 +54,19 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		}
 	});
 
+	// =============================================
+	// FORM STATE PERSISTENCE (survive accidental reload)
+	// =============================================
+	const FD_STORAGE_KEY = 'ex_healthcare_front_desk_draft';
+
+	function debounce(fn, wait) {
+		let t;
+		return function(...args) {
+			clearTimeout(t);
+			t = setTimeout(() => fn.apply(this, args), wait);
+		};
+	}
+
 	const style = `
 		<style>
 			.fd-wrapper { padding: 20px; max-width: 1400px; margin: 0 auto; }
@@ -415,6 +428,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			page.main.find('#existing-patient-block').hide();
 			page.main.find('#new-patient-block').show();
 		}
+		saveFormState();
 	});
 
 	// Register new patient
@@ -445,6 +459,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 					page.main.find('#existing-patient-block').show();
 					page.main.find('#new-patient-block').hide();
 					ci_patient.set_value(registeredPatient);
+					saveFormState();
 				}
 			}
 		});
@@ -523,6 +538,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 			np_dob.set_value('');
 			ci_fee.set_value(0);
 			registeredPatient = null;
+			clearFormState();
 			if (page.main.find('#queue-tab').hasClass('active')) loadQueue();
 		}
 	}
@@ -539,6 +555,7 @@ frappe.pages['front-desk'].on_page_load = function(wrapper) {
 		if (tab === 'queue') withServerToday(function(t) { q_date.set_value(t); loadQueue(); });
 		if (tab === 'nurse') withServerToday(function(t) { n_date.set_value(t); loadNurseQueue(); });
 		if (tab === 'doctor') withServerToday(function(t) { d_date.set_value(t); loadDoctorQueue(); });
+		saveFormState();
 	});
 
 	// =============================================
@@ -829,6 +846,103 @@ function loadQueue() {
 			});
 		});
 	}
+
+	// =============================================
+	// FORM STATE PERSISTENCE (defined here so all controls above
+	// already exist by the time save/restore reference them)
+	// =============================================
+	function saveFormState() {
+		try {
+			const state = {
+				checkinMode: checkinMode,
+				registeredPatient: registeredPatient,
+				activeTab: page.main.find('.tab-btn.active').data('tab'),
+				ci_patient: ci_patient.get_value(),
+				ci_appointment: ci_appointment.get_value(),
+				ci_practitioner: ci_practitioner.get_value(),
+				ci_department: ci_department.get_value(),
+				ci_appointment_type: ci_appointment_type.get_value(),
+				ci_date: ci_date.get_value(),
+				ci_time: ci_time.get_value(),
+				ci_fee: ci_fee.get_value(),
+				np_first_name: np_first_name.get_value(),
+				np_last_name: np_last_name.get_value(),
+				np_mobile: np_mobile.get_value(),
+				np_gender: np_gender.get_value(),
+				np_dob: np_dob.get_value()
+			};
+			localStorage.setItem(FD_STORAGE_KEY, JSON.stringify(state));
+		} catch (e) {
+			console.warn('Front Desk: could not save draft', e);
+		}
+	}
+
+	function restoreFormState() {
+		let raw;
+		try {
+			raw = localStorage.getItem(FD_STORAGE_KEY);
+		} catch (e) {
+			return;
+		}
+		if (!raw) return;
+
+		let state;
+		try {
+			state = JSON.parse(raw);
+		} catch (e) {
+			localStorage.removeItem(FD_STORAGE_KEY);
+			return;
+		}
+
+		if (state.ci_patient) ci_patient.set_value(state.ci_patient);
+		if (state.ci_appointment) ci_appointment.set_value(state.ci_appointment);
+		if (state.ci_practitioner) ci_practitioner.set_value(state.ci_practitioner);
+		if (state.ci_department) ci_department.set_value(state.ci_department);
+		if (state.ci_appointment_type) ci_appointment_type.set_value(state.ci_appointment_type);
+		if (state.ci_date) ci_date.set_value(state.ci_date);
+		if (state.ci_time) ci_time.set_value(state.ci_time);
+		if (state.ci_fee) ci_fee.set_value(state.ci_fee);
+
+		if (state.np_first_name) np_first_name.set_value(state.np_first_name);
+		if (state.np_last_name) np_last_name.set_value(state.np_last_name);
+		if (state.np_mobile) np_mobile.set_value(state.np_mobile);
+		if (state.np_gender) np_gender.set_value(state.np_gender);
+		if (state.np_dob) np_dob.set_value(state.np_dob);
+
+		if (state.registeredPatient) registeredPatient = state.registeredPatient;
+
+		if (state.checkinMode === 'new') {
+			checkinMode = 'new';
+			page.main.find('.toggle-btn').removeClass('active');
+			page.main.find('.toggle-btn[data-mode="new"]').addClass('active');
+			page.main.find('#existing-patient-block').hide();
+			page.main.find('#new-patient-block').show();
+		}
+
+		if (state.activeTab && state.activeTab !== 'checkin') {
+			page.main.find('.tab-btn').removeClass('active');
+			page.main.find(`.tab-btn[data-tab="${state.activeTab}"]`).addClass('active');
+			page.main.find('.tab-content').removeClass('active');
+			page.main.find(`#${state.activeTab}-tab`).addClass('active');
+			if (state.activeTab === 'queue') loadQueue();
+			if (state.activeTab === 'nurse') loadNurseQueue();
+			if (state.activeTab === 'doctor') loadDoctorQueue();
+		}
+	}
+
+	function clearFormState() {
+		try {
+			localStorage.removeItem(FD_STORAGE_KEY);
+		} catch (e) {}
+	}
+
+	// Save on any change/input inside the page (debounced so it isn't
+	// firing on every keystroke)
+	page.main.on('change input', 'input, select, textarea', debounce(saveFormState, 400));
+
+	// Restore whatever was saved before this reload. Runs last, after
+	// every control and every load* function above has been defined.
+	restoreFormState();
 };
 
 //# sourceURL=front_desk.js

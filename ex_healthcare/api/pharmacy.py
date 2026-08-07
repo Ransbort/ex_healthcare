@@ -6,7 +6,15 @@ import json
 import frappe
 from frappe import _
 
+# =============================================
+# NOTIFICATION HELPER
+# =============================================
+
 def _notify(event, payload):
+	"""Broadcast a realtime event to everyone listening in this site.
+	Thin wrapper around frappe.publish_realtime so every caller in this
+	module sends notifications the same way, without needing to import
+	frappe.publish_realtime directly everywhere."""
 	frappe.publish_realtime(event=event, message=payload)
 
 
@@ -23,8 +31,16 @@ def notify_new_medication_request(doc, method=None):
 		"medication_request": doc.name,
 	})
 
+# =============================================
+# PHARMACY SETTINGS
+# =============================================
+
 @frappe.whitelist()
 def get_pharmacy_settings():
+	"""Return the currently configured Pharmacy Item Group so the
+	Pharmacy POS front-end can display/edit it in its settings panel,
+	and so get_pos_medications() below has a documented single source
+	of truth to fall back on when no item_group is passed explicitly."""
 	return {
 		"item_group": frappe.db.get_single_value(
 			"Ex Healthcare Settings", "pharmacy_item_group"
@@ -34,6 +50,10 @@ def get_pharmacy_settings():
 
 @frappe.whitelist()
 def set_pharmacy_item_group(item_group):
+	"""Persist the Item Group used to populate the Pharmacy POS grid's
+	walk-in/OTC section (see get_pos_medications()). Validates the
+	Item Group actually exists before saving, since this value is used
+	directly in a SQL WHERE clause downstream with no further checks."""
 	if not frappe.db.exists("Item Group", item_group):
 		frappe.throw(_("Item Group {0} does not exist").format(item_group))
 
@@ -42,6 +62,10 @@ def set_pharmacy_item_group(item_group):
 	)
 	frappe.db.commit()
 
+
+# =============================================
+# POS MEDICATIONS GRID
+# =============================================
 
 @frappe.whitelist()
 def get_pos_medications(item_group=None):
@@ -101,6 +125,10 @@ def get_pos_medications(item_group=None):
 		as_dict=True,
 	)
 
+	# de-dupe: a Medication can have more than one Medication Linked Item
+	# row (e.g. different pack sizes of the same drug) - only the first
+	# one encountered is surfaced to the POS grid as that medication's
+	# purchasable entry.
 	seen = set()
 	result = []
 
@@ -129,6 +157,8 @@ def get_pos_medications(item_group=None):
 			}
 		)
 
+	# Items already surfaced via the Medication table above must not be
+	# listed a second time when we scan the raw Item Group below.
 	linked_item_codes = {r["item_code"] for r in result if r["item_code"]}
 
 	default_price_list = (
@@ -197,6 +227,10 @@ def get_pos_medications(item_group=None):
 	return result
 
 
+# =============================================
+# BARCODE LOOKUP
+# =============================================
+
 @frappe.whitelist()
 def get_item_by_barcode(barcode):
 	"""
@@ -214,6 +248,10 @@ def get_item_by_barcode(barcode):
 
 	return item_code
 
+
+# =============================================
+# MEDICATION REQUEST BILLING UPDATES
+# =============================================
 
 @frappe.whitelist()
 def update_medication_requests(updates, allow_oversell=False):
@@ -260,6 +298,8 @@ def update_medication_requests(updates, allow_oversell=False):
 		med_req_name = update.get("name")
 		qty = frappe.utils.flt(update.get("qty"))
 
+		# Skip malformed rows silently rather than failing the whole
+		# batch over a missing name or a non-positive quantity.
 		if not med_req_name or qty <= 0:
 			continue
 
